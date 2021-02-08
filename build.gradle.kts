@@ -6,9 +6,6 @@ plugins {
     `maven-publish`
 }
 
-group = "eu.goldapp"
-version = "3.0.0"
-
 repositories {
     mavenCentral()
 }
@@ -22,19 +19,21 @@ application {
 }
 
 publishing {
+    publications {
+        create<MavenPublication>("default") {
+            from(components["java"])
+            // Include any other artifacts here, like javadocs
+        }
+    }
+
     repositories {
         maven {
             name = "GitHubPackages"
             url = uri("https://maven.pkg.github.com/ChrisGold/Pinnwand3")
             credentials {
-                username = project.findProperty("gpr.user") as String? ?: System.getenv("USERNAME")
-                password = project.findProperty("gpr.key") as String? ?: System.getenv("TOKEN")
+                username = System.getenv("GITHUB_ACTOR")
+                password = System.getenv("GITHUB_TOKEN")
             }
-        }
-    }
-    publications {
-        create<MavenPublication>("gpr") {
-            from(components["java"])
         }
     }
 }
