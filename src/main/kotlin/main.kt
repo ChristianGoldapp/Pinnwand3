@@ -1,5 +1,4 @@
 import discord4j.core.DiscordClientBuilder
-import discord4j.core.event.domain.lifecycle.ConnectEvent
 import discord4j.gateway.retry.RetryOptions
 import reactor.core.scheduler.Schedulers
 import java.io.File
@@ -12,5 +11,8 @@ fun main(args: Array<String>) {
         build()
     }
     val guildInit = GuildInitialization(discord)
+
+    guildInit.subscribe()
+
     discord.login().block()
 }

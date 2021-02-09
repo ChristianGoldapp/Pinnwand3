@@ -10,7 +10,7 @@ fun GuildInitialization(discord: DiscordClient): Flux<PinnwandGuild> {
         //TODO: Register guild in database if it does not exist
         //TODO: Ensure that the pinboard channel exists if it is set and that we have the rights to use it
         //TODO: Initialize the Pinboard object for this guild here
-        return PinnwandGuild(guild)
+        return PinnwandGuild(discord, guild)
     }
 
     fun onConnect(connectEvent: ConnectEvent): Flux<PinnwandGuild> {
