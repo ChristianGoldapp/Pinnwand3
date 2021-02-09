@@ -8,6 +8,23 @@ plugins {
 
 repositories {
     mavenCentral()
+    jcenter()
+}
+
+val exposedVersion: String by project
+
+dependencies {
+    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+    //api group: 'org.jetbrains.kotlin', name: 'kotlin-reflect', version: '1.3.50'
+    testImplementation("junit:junit:4.12")
+    implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
+    implementation("org.jetbrains.exposed:exposed-dao:$exposedVersion")
+    implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
+    implementation("org.jetbrains.exposed", "exposed-java-time", exposedVersion)
+    implementation("org.xerial:sqlite-jdbc:3.21.0.1")
+    implementation("mysql:mysql-connector-java:8.0.21")
+    implementation("com.discord4j:discord4j-core:3.0.9")
+    implementation("org.slf4j", "slf4j-simple", "2.0.0-alpha1")
 }
 
 tasks.withType<KotlinCompile>() {
