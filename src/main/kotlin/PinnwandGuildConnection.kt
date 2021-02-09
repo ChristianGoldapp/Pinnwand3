@@ -4,7 +4,7 @@ import discord4j.core.event.domain.Event
 import discord4j.core.event.domain.message.*
 import java.util.function.Predicate
 
-class PinnwandGuild(discord: DiscordClient, val guild: Guild) {
+class PinnwandGuildConnection(discord: DiscordClient, val guild: Guild) {
 
     init {
         fun <T : Event> subscribe(clazz: Class<T>, pred: Predicate<T>, callback: (T) -> Unit) {
