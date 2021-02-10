@@ -23,7 +23,7 @@ dependencies {
     implementation("org.jetbrains.exposed", "exposed-java-time", exposedVersion)
     implementation("org.xerial:sqlite-jdbc:3.21.0.1")
     implementation("mysql:mysql-connector-java:8.0.21")
-    implementation("com.discord4j:discord4j-core:3.0.9")
+    implementation("com.discord4j:discord4j-core:3.1.3")
     implementation("org.slf4j", "slf4j-simple", "2.0.0-alpha1")
 }
 

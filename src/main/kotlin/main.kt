@@ -1,12 +1,10 @@
 import db.PinnwandGuilds
-import discord4j.core.DiscordClientBuilder
-import discord4j.gateway.retry.RetryOptions
+import discord4j.core.DiscordClient
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
-import reactor.core.scheduler.Schedulers
 import java.io.File
-import java.time.Duration
+import kotlin.system.exitProcess
 
 fun main(args: Array<String>) {
     val db = Database.connect("jdbc:sqlite:test.sqlite")
@@ -14,13 +12,14 @@ fun main(args: Array<String>) {
         SchemaUtils.create(PinnwandGuilds)
     }
     val token = File(args[0]).readText()
-    val discord = DiscordClientBuilder(token).run {
-        retryOptions = RetryOptions(Duration.ofSeconds(10), Duration.ofMinutes(30), 8, Schedulers.elastic())
-        build()
-    }
-    val guildInit = GuildInitialization(discord)
+
+    val client = DiscordClient.create(token).login().doOnError {
+        System.err.println("Could not connect Discord client")
+        exitProcess(-1)
+    }.block()!!
+    val guildInit = GuildInitialization(client)
 
     guildInit.subscribe()
 
-    discord.login().block()
+
 }

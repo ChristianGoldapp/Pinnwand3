@@ -1,14 +1,15 @@
 import discord4j.core.DiscordClient
+import discord4j.core.GatewayDiscordClient
 import discord4j.core.`object`.entity.Guild
 import discord4j.core.event.domain.Event
 import discord4j.core.event.domain.message.*
 import java.util.function.Predicate
 
-class PinnwandGuildConnection(discord: DiscordClient, val guild: Guild) {
+class PinnwandGuildConnection(discord: GatewayDiscordClient, val guild: Guild) {
 
     init {
         fun <T : Event> subscribe(clazz: Class<T>, pred: Predicate<T>, callback: (T) -> Unit) {
-            discord.eventDispatcher.on(clazz).filter(pred).subscribe(callback)
+            discord.on(clazz).filter(pred).subscribe(callback)
         }
         subscribe(ReactionAddEvent::class.java, { it.guildId.k == guild.id }, ::addReact)
         subscribe(ReactionRemoveEvent::class.java, { it.guildId.k == guild.id }, ::removeReact)
@@ -31,7 +32,7 @@ class PinnwandGuildConnection(discord: DiscordClient, val guild: Guild) {
     }
 
     fun createMessage(event: MessageCreateEvent) {
-        val message = event.message.content.k ?: "<empty>"
+        val message = event.message.content
         val author = event.member.k?.displayName ?: "<Unknown User>"
         println("Created message in ${guild.name} by $author")
         println(message)
