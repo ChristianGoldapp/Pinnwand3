@@ -37,8 +37,8 @@ fun GuildInitialization(discord: GatewayDiscordClient): Flux<PinnwandGuildConnec
         }
     }
 
-    fun registerGuild(guild: Guild) {
-        transaction {
+    fun registerGuild(guild: Guild): PinnwandGuild {
+        return transaction {
             val pinnwandGuild =
                 PinnwandGuild.findById(guild.id.asLong()) ?: PinnwandGuild.new(guild.id.asLong()) {
                     firstJoined = LocalDateTime.now()
@@ -48,6 +48,7 @@ fun GuildInitialization(discord: GatewayDiscordClient): Flux<PinnwandGuildConnec
             //Ensure that the pinboard channel exists if it is set and that we have the rights to use it
             val pinboardChannelId = pinnwandGuild.pinboardChannel?.let { Snowflake.of(it) }
             validatePinboardChannel(pinboardChannelId, pinnwandGuild, guild)
+            pinnwandGuild
         }
     }
 
@@ -55,8 +56,8 @@ fun GuildInitialization(discord: GatewayDiscordClient): Flux<PinnwandGuildConnec
         println("Connected to Guild ${guild.name}")
 
         //Register guild in database if it does not exist
-        registerGuild(guild)
-        return PinnwandGuildConnection(discord, guild)
+        val pinnwandGuild = registerGuild(guild)
+        return PinnwandGuildConnection(discord, pinnwandGuild, guild)
     }
 
     fun onConnect(connectEvent: ConnectEvent): Flux<PinnwandGuildConnection> {

@@ -21,5 +21,5 @@ fun main(args: Array<String>) {
 
     guildInit.subscribe()
 
-
+    client.onDisconnect().block()
 }
