@@ -9,7 +9,7 @@ class CommandHandler(val callback: CommandCallback) {
         if (!text.startsWith(prefix)) return null
         if (!message.author.isPresent) return null
         //Skip prefix
-        val command = text.subSequence(prefix.length, text.length)
+        val command = text.subSequence(prefix.length, text.length).trim()
         return if (command.startsWith(SET_PREFIX, true)) {
             Command.SetPrefix.parse(message, command, callback)
         } else if (command.startsWith(SET_PINBOARD, true)) {
