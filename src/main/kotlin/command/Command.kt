@@ -4,6 +4,7 @@ import SET_PREFIX
 import discord4j.common.util.Snowflake
 import discord4j.core.`object`.entity.Message
 import k
+import mention
 
 sealed class Command(val channel: Snowflake, val user: Snowflake, val callback: CommandCallback){
     override fun toString(): String {
@@ -96,6 +97,26 @@ sealed class Command(val channel: Snowflake, val user: Snowflake, val callback: 
 
         override fun execute() {
             TODO("Not yet implemented")
+        }
+
+    }
+
+    class Ping(channel: Snowflake, user: Snowflake, callback: CommandCallback): Command(channel, user, callback){
+
+        companion object {
+            fun parse(message: Message, command: CharSequence, callback: CommandCallback): Ping? {
+                return Ping(message.channelId, message.author.k!!.id, callback)
+            }
+        }
+
+        override fun toString(): String {
+            return "Ping(Pong)"
+        }
+
+        override fun execute() {
+            callback.sendMessage(channel){
+                this.setContent("${user.mention()} Pong!")
+            }
         }
 
     }

@@ -20,6 +20,8 @@ class CommandHandler(val callback: CommandCallback) {
             Command.Leaderboard.parse(message, command, callback)
         } else if (command.startsWith(NOSTALGIA, true)) {
             Command.Nostalgia.parse(message, command, callback)
+        } else if (command.startsWith(PING, true)) {
+            Command.Ping.parse(message, command, callback)
         } else {
             null
         }
@@ -37,3 +39,4 @@ const val SET_PINBOARD = "pinboard"
 const val SET_THRESHOLD = "threshold"
 const val LEADERBOARD = "leaderboard"
 const val NOSTALGIA = "nostalgia"
+const val PING = "ping"

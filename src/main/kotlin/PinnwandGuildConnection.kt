@@ -1,9 +1,12 @@
 import command.CommandCallback
 import db.PinnwandGuild
+import discord4j.common.util.Snowflake
 import discord4j.core.GatewayDiscordClient
 import discord4j.core.`object`.entity.Guild
+import discord4j.core.`object`.entity.channel.GuildMessageChannel
 import discord4j.core.event.domain.Event
 import discord4j.core.event.domain.message.*
+import discord4j.core.spec.MessageCreateSpec
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.function.Predicate
 
@@ -31,6 +34,12 @@ class PinnwandGuildConnection(discord: GatewayDiscordClient, val pinnwandGuild: 
         }
 
         override fun getPrefix(): String = prefix
+
+        override fun sendMessage(channel: Snowflake, spec: MessageCreateSpec.() -> Unit) {
+            guild.getChannelById(channel).subscribe {
+                (it as? GuildMessageChannel ?: return@subscribe).createMessage(spec).subscribe()
+            }
+        }
     }
 
     val commandHandler = CommandHandler(commandCallback)
