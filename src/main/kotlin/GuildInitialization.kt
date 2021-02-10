@@ -7,6 +7,7 @@ import discord4j.core.event.domain.lifecycle.ConnectEvent
 import discord4j.rest.util.Permission
 import org.jetbrains.exposed.sql.transactions.transaction
 import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
 import java.time.LocalDateTime
 
 fun GuildInitialization(discord: GatewayDiscordClient): Flux<PinnwandGuildConnection> {
@@ -52,17 +53,21 @@ fun GuildInitialization(discord: GatewayDiscordClient): Flux<PinnwandGuildConnec
         }
     }
 
-    fun init(guild: Guild): PinnwandGuildConnection {
+    fun init(guild: Guild): Mono<PinnwandGuildConnection> {
         println("Connected to Guild ${guild.name}")
 
         //Register guild in database if it does not exist
         val pinnwandGuild = registerGuild(guild)
-        return PinnwandGuildConnection(discord, pinnwandGuild, guild)
+        return pinnwandGuild.pinboardChannel?.let {
+            guild.getChannelById(Snowflake.of(it)).map { gc ->
+                PinnwandGuildConnection(discord, gc as GuildMessageChannel, pinnwandGuild, guild)
+            }
+        } ?: Mono.just(PinnwandGuildConnection(discord, null, pinnwandGuild, guild))
     }
 
     fun onConnect(connectEvent: ConnectEvent): Flux<PinnwandGuildConnection> {
         val client = connectEvent.client
-        return client.guilds.map { init(it) }
+        return client.guilds.flatMap { init(it) }
     }
 
     return discord.eventDispatcher.on(ConnectEvent::class.java).flatMap(::onConnect)

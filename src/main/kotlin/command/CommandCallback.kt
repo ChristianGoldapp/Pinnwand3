@@ -9,5 +9,7 @@ interface CommandCallback {
 
     fun getPrefix(): String
 
+    fun setPinboard(channel: Snowflake)
+
     fun sendMessage(channel: Snowflake, spec: MessageCreateSpec.() -> Unit)
 }

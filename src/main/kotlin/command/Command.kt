@@ -35,8 +35,8 @@ sealed class Command(val channel: Snowflake, val user: Snowflake, val callback: 
 
     class SetPinboard(channel: Snowflake, user: Snowflake, callback: CommandCallback) : Command(channel, user, callback) {
         companion object {
-            fun parse(message: Message, command: CharSequence, callback: CommandCallback): SetPinboard? {
-                return null
+            fun parse(message: Message, command: CharSequence, callback: CommandCallback): SetPinboard {
+                return SetPinboard(message.channelId, message.author.k!!.id, callback)
             }
         }
 
@@ -45,7 +45,7 @@ sealed class Command(val channel: Snowflake, val user: Snowflake, val callback: 
         }
 
         override fun execute() {
-            TODO("Not yet implemented")
+            callback.setPinboard(channel)
         }
 
     }
