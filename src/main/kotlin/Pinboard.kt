@@ -1,9 +1,9 @@
 import discord4j.core.`object`.entity.Message
 import discord4j.core.`object`.entity.channel.GuildMessageChannel
 
-class Pinboard(initialThreshold: Int) {
+class Pinboard(initialThreshold: Int, initialChannel: GuildMessageChannel?) {
 
-    var channel: GuildMessageChannel? = null
+    var channel: GuildMessageChannel? = initialChannel
     var threshold: Int = initialThreshold
 
     fun updateBasedOn(original: Message, pinCount: Int){

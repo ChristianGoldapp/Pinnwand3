@@ -36,7 +36,7 @@ class PinnwandGuildConnection(
         }
     }
 
-    val pinboard = Pinboard(pinnwandGuild.pinThreshold)
+    val pinboard = Pinboard(pinnwandGuild.pinThreshold, guildChannel)
 
     var pinEmoji: String = pinnwandGuild.pinEmoji
     set(value) {
@@ -103,9 +103,15 @@ class PinnwandGuildConnection(
     }
 
     fun removeReact(event: ReactionRemoveEvent) {
-        val emoji = event.emoji.asCustomEmoji()
+        val emoji = event.emoji.normalise()
         val message = event.messageId
         val reactor = event.userId
+        println("Removed React: $emoji by ${reactor.mention()} on ${message.asLong()} ${if(emoji == pinEmoji) "PIN" else ""}")
+        if(emoji == pinEmoji){
+            event.message.subscribe {
+                pinboard.updateBasedOn(it, it.countPins())
+            }
+        }
     }
 
     fun createMessage(event: MessageCreateEvent) {
