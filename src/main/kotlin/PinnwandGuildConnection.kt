@@ -3,6 +3,7 @@ import db.PinnwandGuild
 import discord4j.common.util.Snowflake
 import discord4j.core.GatewayDiscordClient
 import discord4j.core.`object`.entity.Guild
+import discord4j.core.`object`.entity.Message
 import discord4j.core.`object`.entity.channel.GuildMessageChannel
 import discord4j.core.event.domain.Event
 import discord4j.core.event.domain.message.*
@@ -35,7 +36,7 @@ class PinnwandGuildConnection(
         }
     }
 
-    var pinboard: GuildMessageChannel? = guildChannel
+    val pinboard = Pinboard(pinnwandGuild.pinThreshold)
 
     var pinEmoji: String = pinnwandGuild.pinEmoji
     set(value) {
@@ -48,6 +49,7 @@ class PinnwandGuildConnection(
     var pinThreshold: Int = pinnwandGuild.pinThreshold
     set(value) {
         field = value
+        pinboard.threshold = field
         transaction {
             pinnwandGuild.pinThreshold = pinThreshold
         }
@@ -64,8 +66,8 @@ class PinnwandGuildConnection(
 
         override fun setPinboard(channel: Snowflake) {
             guild.getChannelById(channel).subscribe {
-                pinboard = it as? GuildMessageChannel
-                println("Set new pinboard channel: ${pinboard?.name}")
+                pinboard.channel = it as? GuildMessageChannel
+                println("Set new pinboard channel: ${pinboard.channel?.name}")
             }
         }
 
@@ -93,6 +95,11 @@ class PinnwandGuildConnection(
         val message = event.messageId
         val reactor = event.userId
         println("Added React: $emoji by ${reactor.mention()} on ${message.asLong()} ${if(emoji == pinEmoji) "PIN" else ""}")
+        if(emoji == pinEmoji){
+            event.message.subscribe {
+                pinboard.updateBasedOn(it, it.countPins())
+            }
+        }
     }
 
     fun removeReact(event: ReactionRemoveEvent) {
@@ -112,5 +119,9 @@ class PinnwandGuildConnection(
     fun removeMessage(event: MessageDeleteEvent) {
         val message = event.message.k?.content ?: "<empty>"
         val author = event.message.k?.author?.k?.username ?: "<Unknown User>"
+    }
+
+    private fun Message.countPins(): Int{
+        return this.reactions.find { it.emoji.normalise() == pinEmoji }?.count ?: 0
     }
 }

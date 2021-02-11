@@ -1,4 +1,4 @@
-import db.Messages
+import db.DiscordMessages
 import db.PinnwandGuilds
 import discord4j.core.DiscordClient
 import org.jetbrains.exposed.sql.Database
@@ -10,7 +10,7 @@ import kotlin.system.exitProcess
 fun main(args: Array<String>) {
     val db = Database.connect("jdbc:sqlite:test.sqlite")
     transaction(db) {
-        SchemaUtils.create(PinnwandGuilds, Messages)
+        SchemaUtils.create(PinnwandGuilds, DiscordMessages)
     }
     val token = File(args[0]).readText()
 
