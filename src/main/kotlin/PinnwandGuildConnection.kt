@@ -28,10 +28,16 @@ class PinnwandGuildConnection(
     }
 
     var prefix: String = pinnwandGuild.commandPrefix
+
     var pinboard: GuildMessageChannel? = guildChannel
+
     var pinEmoji: String = pinnwandGuild.pinEmoji
 
+    var pinThreshold: Int = pinnwandGuild.pinThreshold
+
     val commandCallback = object : CommandCallback {
+
+        //TODO: Refactor this so setting new values uses property setter
         override fun setPrefix(newPrefix: String) {
             prefix = newPrefix
             transaction {
@@ -61,6 +67,14 @@ class PinnwandGuildConnection(
                 pinnwandGuild.pinEmoji = pinEmoji
             }
             println("Setting new pinning emoji for ${guild.name}: $pinEmoji")
+        }
+
+        override fun setThreshold(newThreshold: Int) {
+            pinThreshold = newThreshold
+            transaction {
+                pinnwandGuild.pinThreshold = pinThreshold
+            }
+            println("Setting new pinning threshold for ${guild.name}: $pinThreshold")
         }
     }
 

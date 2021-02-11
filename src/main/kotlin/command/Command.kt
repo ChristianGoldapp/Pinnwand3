@@ -2,6 +2,7 @@ package command
 
 import SET_PIN
 import SET_PREFIX
+import SET_THRESHOLD
 import discord4j.common.util.Snowflake
 import discord4j.core.`object`.entity.Message
 import k
@@ -31,6 +32,9 @@ sealed class Command(val channel: Snowflake, val user: Snowflake, val callback: 
 
         override fun execute() {
             callback.setPrefix(prefix)
+            callback.sendMessage(channel){
+                setContent("Alright ${user.mention()}, making \"$prefix\" the new command prefix for this server. Note that prefixes may be followed by a space.")
+            }
         }
 
     }
@@ -48,6 +52,9 @@ sealed class Command(val channel: Snowflake, val user: Snowflake, val callback: 
 
         override fun execute() {
             callback.setPinboard(channel)
+            callback.sendMessage(channel){
+                setContent("Alright ${user.mention()}, making this channel the pinboard for this server.")
+            }
         }
 
     }
@@ -64,6 +71,9 @@ sealed class Command(val channel: Snowflake, val user: Snowflake, val callback: 
 
         override fun execute() {
             callback.setPinEmoji(emoji)
+            callback.sendMessage(channel){
+                setContent("Alright ${user.mention()}, setting the pin emoji for this server to $emoji.")
+            }
         }
 
     }
@@ -71,7 +81,10 @@ sealed class Command(val channel: Snowflake, val user: Snowflake, val callback: 
     class SetThreshold(channel: Snowflake, user: Snowflake, val threshold: Int, callback: CommandCallback) : Command(channel, user, callback) {
         companion object {
             fun parse(message: Message, command: CharSequence, callback: CommandCallback): SetThreshold? {
-                return null
+                val content = command.subSequence(SET_THRESHOLD.length, command.length).trim()
+                val threshold = content.split(" ").firstOrNull()?.toIntOrNull() ?: return null
+                if(threshold < 1) return null
+                return SetThreshold(message.channelId, message.author.k!!.id, threshold, callback)
             }
         }
 
@@ -80,7 +93,10 @@ sealed class Command(val channel: Snowflake, val user: Snowflake, val callback: 
         }
 
         override fun execute() {
-            TODO("Not yet implemented")
+            callback.setThreshold(threshold)
+            callback.sendMessage(channel){
+                setContent("Alright ${user.mention()}, setting the threshold for this server to $threshold.")
+            }
         }
 
     }

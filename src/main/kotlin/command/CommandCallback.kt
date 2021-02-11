@@ -14,4 +14,6 @@ interface CommandCallback {
     fun setPinboard(channel: Snowflake)
 
     fun sendMessage(channel: Snowflake, spec: MessageCreateSpec.() -> Unit)
+
+    fun setThreshold(newThreshold: Int)
 }
