@@ -9,6 +9,8 @@ interface CommandCallback {
 
     fun getPrefix(): String
 
+    fun setPinEmoji(newEmoji: String)
+
     fun setPinboard(channel: Snowflake)
 
     fun sendMessage(channel: Snowflake, spec: MessageCreateSpec.() -> Unit)

@@ -22,12 +22,14 @@ class CommandHandler(val callback: CommandCallback) {
             Command.Nostalgia.parse(message, command, callback)
         } else if (command.startsWith(PING, true)) {
             Command.Ping.parse(message, command, callback)
+        } else if (command.startsWith(SET_PIN, true)) {
+            Command.SetPin.parse(message, command, callback)
         } else {
             null
         }
     }
 
-    fun onMessage(message: Message){
+    fun onMessage(message: Message) {
         val command = parseCommand(message) ?: return
         println("Executing: $command")
         command.execute()
@@ -36,6 +38,7 @@ class CommandHandler(val callback: CommandCallback) {
 
 const val SET_PREFIX = "prefix"
 const val SET_PINBOARD = "pinboard"
+const val SET_PIN = "setpin"
 const val SET_THRESHOLD = "threshold"
 const val LEADERBOARD = "leaderboard"
 const val NOSTALGIA = "nostalgia"

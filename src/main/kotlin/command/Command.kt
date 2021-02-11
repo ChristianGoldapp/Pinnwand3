@@ -1,10 +1,12 @@
 package command
 
+import SET_PIN
 import SET_PREFIX
 import discord4j.common.util.Snowflake
 import discord4j.core.`object`.entity.Message
 import k
 import mention
+import stripColons
 
 sealed class Command(val channel: Snowflake, val user: Snowflake, val callback: CommandCallback){
     override fun toString(): String {
@@ -46,6 +48,22 @@ sealed class Command(val channel: Snowflake, val user: Snowflake, val callback: 
 
         override fun execute() {
             callback.setPinboard(channel)
+        }
+
+    }
+
+    class SetPin(channel: Snowflake, user: Snowflake, callback: CommandCallback, val emoji: String) : Command(channel, user, callback){
+        companion object {
+            fun parse(message: Message, command: CharSequence, callback: CommandCallback): SetPin? {
+                val content = command.subSequence(SET_PIN.length, command.length).trim()
+                val emoji = content.split(" ").firstOrNull()?.stripColons() ?: return null
+                if(emoji.isBlank()) return null
+                return SetPin(message.channelId, message.author.k!!.id, callback, emoji)
+            }
+        }
+
+        override fun execute() {
+            callback.setPinEmoji(emoji)
         }
 
     }

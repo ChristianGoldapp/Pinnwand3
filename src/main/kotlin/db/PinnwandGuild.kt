@@ -12,6 +12,7 @@ class PinnwandGuild(id: EntityID<Long>) : LongEntity(id) {
     var commandPrefix by PinnwandGuilds.commandPrefix
     var firstJoined by PinnwandGuilds.firstJoined
     var pinboardChannel by PinnwandGuilds.pinboardChannel
+    var pinEmoji by PinnwandGuilds.pinEmoji
 
     override fun toString(): String {
         return "PinnwandGuild(commandPrefix='$commandPrefix', firstJoined=$firstJoined, pinboardChannel=$pinboardChannel)"
@@ -22,4 +23,5 @@ object PinnwandGuilds : LongIdTable("pinnwand_guild") {
     val commandPrefix = varchar("command_prefix", 32).default("*")
     val firstJoined = datetime("first_joined")
     val pinboardChannel = long("pinboard").nullable().default(null)
+    val pinEmoji = varchar("pin_emoji", 256).default("pushpin")
 }

@@ -11,7 +11,12 @@ import discord4j.core.spec.MessageCreateSpec
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.function.Predicate
 
-class PinnwandGuildConnection(discord: GatewayDiscordClient, guildChannel: GuildMessageChannel?, val pinnwandGuild: PinnwandGuild, val guild: Guild) {
+class PinnwandGuildConnection(
+    discord: GatewayDiscordClient,
+    guildChannel: GuildMessageChannel?,
+    val pinnwandGuild: PinnwandGuild,
+    val guild: Guild
+) {
 
     init {
         fun <T : Event> subscribe(clazz: Class<T>, pred: Predicate<T>, callback: (T) -> Unit) {
@@ -25,8 +30,9 @@ class PinnwandGuildConnection(discord: GatewayDiscordClient, guildChannel: Guild
 
     var prefix: String = pinnwandGuild.commandPrefix
     var pinboard: GuildMessageChannel? = guildChannel
+    var emoji: String = pinnwandGuild.pinEmoji
 
-    val commandCallback = object : CommandCallback{
+    val commandCallback = object : CommandCallback {
         override fun setPrefix(newPrefix: String) {
             prefix = newPrefix
             transaction {
@@ -49,14 +55,23 @@ class PinnwandGuildConnection(discord: GatewayDiscordClient, guildChannel: Guild
                 (it as? GuildMessageChannel ?: return@subscribe).createMessage(spec).subscribe()
             }
         }
+
+        override fun setPinEmoji(newEmoji: String) {
+            emoji = newEmoji
+            transaction {
+                pinnwandGuild.pinEmoji = emoji
+            }
+            println("Setting new pinning emoji for ${guild.name}: $emoji")
+        }
     }
 
     val commandHandler = CommandHandler(commandCallback)
 
     fun addReact(event: ReactionAddEvent) {
-        val emoji = event.emoji.asCustomEmoji()
+        val emoji = event.emoji.normalise()
         val message = event.messageId
         val reactor = event.userId
+        println("Added React: $emoji by ${reactor.mention()}")
     }
 
     fun removeReact(event: ReactionRemoveEvent) {
@@ -68,6 +83,8 @@ class PinnwandGuildConnection(discord: GatewayDiscordClient, guildChannel: Guild
     fun createMessage(event: MessageCreateEvent) {
         val message = event.message.content
         val author = event.member.k?.displayName ?: "<Unknown User>"
+        println("Created message: by $author")
+        println("\t$message")
         commandHandler.onMessage(event.message)
     }
 
