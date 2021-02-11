@@ -3,7 +3,6 @@ import db.PinnwandGuild
 import discord4j.common.util.Snowflake
 import discord4j.core.GatewayDiscordClient
 import discord4j.core.`object`.entity.Guild
-import discord4j.core.`object`.entity.channel.GuildChannel
 import discord4j.core.`object`.entity.channel.GuildMessageChannel
 import discord4j.core.event.domain.Event
 import discord4j.core.event.domain.message.*
@@ -30,7 +29,7 @@ class PinnwandGuildConnection(
 
     var prefix: String = pinnwandGuild.commandPrefix
     var pinboard: GuildMessageChannel? = guildChannel
-    var emoji: String = pinnwandGuild.pinEmoji
+    var pinEmoji: String = pinnwandGuild.pinEmoji
 
     val commandCallback = object : CommandCallback {
         override fun setPrefix(newPrefix: String) {
@@ -57,11 +56,11 @@ class PinnwandGuildConnection(
         }
 
         override fun setPinEmoji(newEmoji: String) {
-            emoji = newEmoji
+            pinEmoji = newEmoji
             transaction {
-                pinnwandGuild.pinEmoji = emoji
+                pinnwandGuild.pinEmoji = pinEmoji
             }
-            println("Setting new pinning emoji for ${guild.name}: $emoji")
+            println("Setting new pinning emoji for ${guild.name}: $pinEmoji")
         }
     }
 
@@ -71,7 +70,7 @@ class PinnwandGuildConnection(
         val emoji = event.emoji.normalise()
         val message = event.messageId
         val reactor = event.userId
-        println("Added React: $emoji by ${reactor.mention()}")
+        println("Added React: $emoji by ${reactor.mention()} on ${message.asLong()} ${if(emoji == pinEmoji) "PIN" else ""}")
     }
 
     fun removeReact(event: ReactionRemoveEvent) {
