@@ -24,6 +24,6 @@ object PinnwandGuilds : LongIdTable("pinnwand_guild") {
     val commandPrefix = varchar("command_prefix", 32).default("*")
     val firstJoined = datetime("first_joined")
     val pinboardChannel = long("pinboard").nullable().default(null)
-    val pinEmoji = varchar("pin_emoji", 256).default("pushpin")
+    val pinEmoji = varchar("pin_emoji", 256).default("\uD83D\uDCCC")
     val pinThreshold = integer("threshold").default(5)
 }
