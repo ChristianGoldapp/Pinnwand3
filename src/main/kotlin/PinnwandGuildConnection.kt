@@ -125,6 +125,7 @@ class PinnwandGuildConnection(
     fun removeMessage(event: MessageDeleteEvent) {
         val message = event.message.k?.content ?: "<empty>"
         val author = event.message.k?.author?.k?.username ?: "<Unknown User>"
+        pinboard.shouldUnpin(event.messageId, 0)
     }
 
     private fun Message.countPins(): Int{
