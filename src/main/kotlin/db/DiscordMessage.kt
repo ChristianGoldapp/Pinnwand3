@@ -18,5 +18,5 @@ object DiscordMessages : LongIdTable("message") {
     val guild = reference("guild", PinnwandGuilds)
     val channel = long("channel")
     val author = long("author")
-    val pinCount = integer("pin_count")
+    val pinCount = integer("pin_count").default(0)
 }

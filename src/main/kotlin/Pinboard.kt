@@ -94,9 +94,9 @@ class Pinboard(val guild: Guild, initialThreshold: Int, initialChannel: GuildMes
         }.firstOrNull()
     }
 
-    private fun createNewPinMessage(ch: GuildMessageChannel, original: Message, authorId: Snowflake, pinCount: Int): Mono<Message>{
+    private fun createNewPinMessage(ch: GuildMessageChannel, original: Message, authorId: Snowflake, pins: Int): Mono<Message>{
         val guildId = this@Pinboard.guild.id
-        return ch.makePinMessage(original, authorId, pinCount).doOnSuccess { pinMessage ->
+        return ch.makePinMessage(original, authorId, pins).doOnSuccess { pinMessage ->
             transaction {
                 PinboardMessage.new(pinMessage.id.asLong()){
                     this.channel = pinMessage.channelId.asLong()
@@ -106,6 +106,7 @@ class Pinboard(val guild: Guild, initialThreshold: Int, initialChannel: GuildMes
                             guild = PinnwandGuild.findById(this@Pinboard.guild.id.asLong())!!
                             channel = original.channelId.asLong()
                             author = authorId.asLong()
+                            this.pinCount = pins
                         }
                 }
             }
