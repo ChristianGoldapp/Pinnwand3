@@ -1,4 +1,6 @@
 import command.CommandCallback
+import db.DiscordMessage
+import db.PinboardMessage
 import db.PinnwandGuild
 import discord4j.common.util.Snowflake
 import discord4j.core.GatewayDiscordClient
@@ -144,13 +146,31 @@ class PinnwandGuildConnection(
         val lastMessage = channel.lastMessageId.k ?: return
         channel.getMessagesBefore(lastMessage).filter {
             it.author.k?.id == discord.selfId
-        }.subscribe {
+        }.map {
             print("Trying to extract from message: ${MessageURL(guild.id, channel.id, it.id)} ...")
-            val (message, url) = it.extractPostLink()
-            if (url == null) {
-                println(" $message")
-            }
-            else println(" $url")
+            val result = PinboardScan.scan(guild.id, it)
+            println("$result")
+            result
+        }.filter { it is PinboardScan.Success }.map { it as PinboardScan.Success }.collectList().subscribe { messages ->
+            println("Found ${messages.size} messages")
+                for (message in messages) {
+                    transaction {
+                        val pinboardPostId = message.pinboardPost.message.asLong()
+                        val originalId = message.originalPost.message.asLong()
+                        if(PinboardMessage.findById(pinboardPostId) == null){
+                            PinboardMessage.new(pinboardPostId) {
+                                this.message = DiscordMessage.findById(originalId) ?: DiscordMessage.new(originalId){
+                                    this.pinCount = message.pinCount ?: pinThreshold
+                                    this.author = message.user.asLong()
+                                    this.guild = pinnwandGuild
+                                    this.channel = message.originalPost.channel.asLong()
+                                }
+                                this.guild = pinnwandGuild
+                                this.channel = channel.id.asLong()
+                            }
+                        }
+                    }
+                }
         }
     }
 

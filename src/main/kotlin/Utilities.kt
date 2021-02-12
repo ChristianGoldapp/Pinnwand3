@@ -10,6 +10,14 @@ val <T> T?.o get() = Optional.ofNullable(this)
 
 fun Snowflake.mention() = "<@${this.asLong()}>"
 
+fun String.parseMention(): Snowflake? {
+    return try {
+        Snowflake.of(substring(3, length - 1))
+    } catch (ex: Throwable) {
+        null
+    }
+}
+
 fun ReactionEmoji.normalise(): String {
     return asUnicodeEmoji().k?.raw ?: asCustomEmoji().k!!.normalise()
 }
@@ -36,28 +44,9 @@ fun Message.extractImageURL(): String? {
     val raw = attachments.toList().getOrNull(0)?.url ?: embeds.getOrNull(0)?.url?.k ?: return null
     return try {
         URL(raw).toString()
-    } catch (ex: Exception){
+    } catch (ex: Exception) {
         println("Could not parse $raw as URL")
         null
-    }
-}
-
-fun Message.extractPostLink(): Pair<String, MessageURL?> {
-    val embed = embeds.firstOrNull() ?: return "ERROR: No Embed" to null
-    val description = embed.description.k ?: return "ERROR: No Description" to null
-    val start = description.indexOf('(')
-    val end = description.indexOf(')', start)
-    if(start == -1 || end == -1) return "ERROR: Description has no markdown link: $description" to null
-    val link = description.substring(start + 1, end)
-    val prefix = "https://discordapp.com/channels/"
-    if(!link.startsWith(prefix)) return "ERROR: Link has wrong form: $description" to null
-    val params = link.substring(prefix.length, link.length).trim().split('/')
-    if(params.size != 3) return return "ERROR: Link has wrong number of parameters ($params): $description" to null
-    val (guild, channel, message) = params
-    try {
-        return link to MessageURL(Snowflake.of(guild), Snowflake.of(channel), Snowflake.of(message))
-    } catch (ex: Exception){
-        return "ERROR: Could not parse one of parameters ($params): $description" to null
     }
 }
 
