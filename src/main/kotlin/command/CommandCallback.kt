@@ -16,4 +16,6 @@ interface CommandCallback {
     fun sendMessage(channel: Snowflake, spec: MessageCreateSpec.() -> Unit)
 
     fun setThreshold(newThreshold: Int)
+
+    fun rescan()
 }

@@ -24,6 +24,8 @@ class CommandHandler(val callback: CommandCallback) {
             Command.Ping.parse(message, command, callback)
         } else if (command.startsWith(SET_PIN, true)) {
             Command.SetPin.parse(message, command, callback)
+        } else if (command.startsWith(RESCAN, true)) {
+            Command.Rescan.parse(message, command, callback)
         } else {
             null
         }
@@ -43,3 +45,4 @@ const val SET_THRESHOLD = "threshold"
 const val LEADERBOARD = "leaderboard"
 const val NOSTALGIA = "nostalgia"
 const val PING = "ping"
+const val RESCAN = "rescan"

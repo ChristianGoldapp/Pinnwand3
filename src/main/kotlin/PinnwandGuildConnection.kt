@@ -12,7 +12,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.function.Predicate
 
 class PinnwandGuildConnection(
-    discord: GatewayDiscordClient,
+    val discord: GatewayDiscordClient,
     guildChannel: GuildMessageChannel?,
     val pinnwandGuild: PinnwandGuild,
     val guild: Guild
@@ -89,6 +89,11 @@ class PinnwandGuildConnection(
             pinThreshold = newThreshold
             println("Setting new pinning threshold for ${guild.name}: $pinThreshold")
         }
+
+        override fun rescan() {
+            println("Scanning the pinboard's backlog")
+            doRescan()
+        }
     }
 
     val commandHandler = CommandHandler(commandCallback)
@@ -132,6 +137,21 @@ class PinnwandGuildConnection(
         val message = event.message.k?.content ?: "<empty>"
         val author = event.message.k?.author?.k?.username ?: "<Unknown User>"
         pinboard.shouldUnpin(event.messageId, 0)
+    }
+
+    fun doRescan() {
+        val channel = pinboard.channel ?: return
+        val lastMessage = channel.lastMessageId.k ?: return
+        channel.getMessagesBefore(lastMessage).filter {
+            it.author.k?.id == discord.selfId
+        }.subscribe {
+            print("Trying to extract from message: ${MessageURL(guild.id, channel.id, it.id)} ...")
+            val (message, url) = it.extractPostLink()
+            if (url == null) {
+                println(" $message")
+            }
+            else println(" $url")
+        }
     }
 
     private fun Message.countPins(): Int {

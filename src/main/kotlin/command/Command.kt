@@ -154,4 +154,18 @@ sealed class Command(val channel: Snowflake, val user: Snowflake, val callback: 
         }
 
     }
+
+    class Rescan(channel: Snowflake, user: Snowflake, callback: CommandCallback): Command(channel, user, callback){
+
+        companion object {
+            fun parse(message: Message, command: CharSequence, callback: CommandCallback): Rescan {
+                return Rescan(message.channelId, message.author.k!!.id, callback)
+            }
+        }
+
+        override fun execute() {
+            callback.rescan()
+        }
+
+    }
 }
