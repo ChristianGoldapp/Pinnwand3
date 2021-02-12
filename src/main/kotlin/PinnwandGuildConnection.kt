@@ -1,8 +1,5 @@
 import command.CommandCallback
-import db.DiscordMessage
-import db.PinboardMessage
-import db.PinboardMessages
-import db.PinnwandGuild
+import db.*
 import discord4j.common.util.Snowflake
 import discord4j.core.GatewayDiscordClient
 import discord4j.core.`object`.entity.Guild
@@ -13,7 +10,9 @@ import discord4j.core.event.domain.message.*
 import discord4j.core.spec.MessageCreateSpec
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.slf4j.LoggerFactory
 import java.util.function.Predicate
+import kotlin.math.min
 
 class PinnwandGuildConnection(
     val discord: GatewayDiscordClient,
@@ -31,6 +30,8 @@ class PinnwandGuildConnection(
         subscribe(MessageCreateEvent::class.java, { it.guildId.k == guild.id }, ::createMessage)
         subscribe(MessageDeleteEvent::class.java, { true }, ::removeMessage)
     }
+
+    val log = LoggerFactory.getLogger(PinnwandGuildConnection::class.java)
 
     var prefix: String = pinnwandGuild.commandPrefix
         set(value) {
@@ -98,6 +99,22 @@ class PinnwandGuildConnection(
             println("Scanning the pinboard's backlog")
             doRescan(limit)
         }
+
+        override fun leaderboard(channelId: Snowflake, page: Int) {
+            guild.getChannelById(channelId).subscribe { channel ->
+                (channel as? GuildMessageChannel)?.let {
+                    val leaderboard = Leaderboard.tally(guild.id)
+                    val content = formatLeaderboard(leaderboard, 20, (page - 1) * 20)
+                    log.info("Leaderboard: \n$content")
+                    channel.createMessage { mcs ->
+                        mcs.setEmbed {
+                            it.setDescription("Pinnwand Leaderboard")
+                            it.addField("#", content.substring(0, min(content.length, 1000)), true)
+                        }
+                    }.subscribe()
+                }
+            }
+        }
     }
 
     val commandHandler = CommandHandler(commandCallback)
@@ -155,28 +172,28 @@ class PinnwandGuildConnection(
             result
         }.filter { it is PinboardScan.Success }.map { it as PinboardScan.Success }.collectList().subscribe { messages ->
             println("Found ${messages.size} messages")
-                for (message in messages) {
-                    transaction {
-                        val pinboardPostId = message.pinboardPost.message.asLong()
-                        val originalId = message.originalPost.message.asLong()
-                        if(PinboardMessage.findById(pinboardPostId) == null){
-                            //Delete duplicates
-                            PinboardMessages.deleteWhere {
-                                PinboardMessages.message eq originalId
-                            }
-                            PinboardMessage.new(pinboardPostId) {
-                                this.message = DiscordMessage.findById(originalId) ?: DiscordMessage.new(originalId){
-                                    this.pinCount = message.pinCount ?: pinThreshold
-                                    this.author = message.user.asLong()
-                                    this.guild = pinnwandGuild
-                                    this.channel = message.originalPost.channel.asLong()
-                                }
+            for (message in messages) {
+                transaction {
+                    val pinboardPostId = message.pinboardPost.message.asLong()
+                    val originalId = message.originalPost.message.asLong()
+                    if (PinboardMessage.findById(pinboardPostId) == null) {
+                        //Delete duplicates
+                        PinboardMessages.deleteWhere {
+                            PinboardMessages.message eq originalId
+                        }
+                        PinboardMessage.new(pinboardPostId) {
+                            this.message = DiscordMessage.findById(originalId) ?: DiscordMessage.new(originalId) {
+                                this.pinCount = message.pinCount ?: pinThreshold
+                                this.author = message.user.asLong()
                                 this.guild = pinnwandGuild
-                                this.channel = channel.id.asLong()
+                                this.channel = message.originalPost.channel.asLong()
                             }
+                            this.guild = pinnwandGuild
+                            this.channel = channel.id.asLong()
                         }
                     }
                 }
+            }
         }
     }
 

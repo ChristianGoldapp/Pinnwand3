@@ -1,3 +1,4 @@
+import db.LeaderboardEntry
 import discord4j.common.util.Snowflake
 import discord4j.core.`object`.entity.Message
 import discord4j.core.`object`.reaction.ReactionEmoji
@@ -51,3 +52,25 @@ fun Message.extractImageURL(): String? {
 }
 
 fun Snowflake.channel() = "<#${asString()}>"
+
+fun formatLeaderboard(list: List<LeaderboardEntry>, limit: Int, offset: Int): String {
+    val content = StringBuilder()
+
+    if (list.isEmpty()) {
+        return "<empty>"
+    }
+
+    list.forEachIndexed { i, (author, pinCount) ->
+        if (i >= offset && i < offset + limit) {
+            val pos = (i + 1).toString()
+            content.append(pos)
+            content.append(": ")
+            content.append(author.mention())
+            content.append(" (")
+            content.append(pinCount)
+            content.append(")\n")
+        }
+    }
+
+    return content.toString()
+}

@@ -105,7 +105,10 @@ sealed class Command(val channel: Snowflake, val user: Snowflake, val callback: 
     class Leaderboard(channel: Snowflake, user: Snowflake, val page: Int, callback: CommandCallback) : Command(channel, user, callback) {
         companion object {
             fun parse(message: Message, command: CharSequence, callback: CommandCallback): Leaderboard? {
-                return null
+                val content = command.subSequence(RESCAN.length, command.length).trim()
+                val page = content.split(" ").firstOrNull()?.toIntOrNull() ?: 1
+                if(page < 1) return null
+                return Leaderboard(message.channelId, message.author.k!!.id, page, callback)
             }
         }
 
@@ -114,7 +117,7 @@ sealed class Command(val channel: Snowflake, val user: Snowflake, val callback: 
         }
 
         override fun execute() {
-            TODO("Not yet implemented")
+            callback.leaderboard(channel, page)
         }
 
     }

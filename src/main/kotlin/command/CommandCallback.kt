@@ -18,4 +18,6 @@ interface CommandCallback {
     fun setThreshold(newThreshold: Int)
 
     fun rescan(limit: Int)
+
+    fun leaderboard(channelId: Snowflake, page: Int)
 }
