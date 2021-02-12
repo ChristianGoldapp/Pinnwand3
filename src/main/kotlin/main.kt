@@ -9,7 +9,8 @@ import java.io.File
 import kotlin.system.exitProcess
 
 fun main(args: Array<String>) {
-    val db = Database.connect("jdbc:sqlite:test.sqlite")
+    //"jdbc:sqlite:test.sqlite"
+    val db = Database.connect(args[1])
     transaction(db) {
         SchemaUtils.create(PinnwandGuilds, DiscordMessages, PinboardMessages)
     }
