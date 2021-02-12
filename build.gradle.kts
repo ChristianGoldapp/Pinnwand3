@@ -36,7 +36,7 @@ application {
 }
 
 val fatJar = task("fatJar", type = Jar::class) {
-    this.setProperty("archiveFileName", "Pinnwand$archiveVersion.jar")
+    this.setProperty("archiveFileName", "Pinnwand.jar")
     manifest {
         attributes["Implementation-Title"] = "Pinnwand"
         attributes["Implementation-Version"] = archiveVersion
