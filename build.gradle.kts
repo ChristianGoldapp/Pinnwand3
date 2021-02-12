@@ -38,10 +38,10 @@ application {
 }
 
 val fatJar = task("fatJar", type = Jar::class) {
-    this.setProperty("archiveFileName", "Pinnwand.jar")
+    this.setProperty("archiveFileName", "Pinnwand-$version.jar")
     manifest {
         attributes["Implementation-Title"] = "Pinnwand"
-        attributes["Implementation-Version"] = archiveVersion
+        attributes["Implementation-Version"] = version
         attributes["Main-Class"] = "MainKt"
     }
     from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
