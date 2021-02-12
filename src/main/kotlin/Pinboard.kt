@@ -8,7 +8,6 @@ import discord4j.core.`object`.entity.Message
 import discord4j.core.`object`.entity.channel.GuildMessageChannel
 import org.jetbrains.exposed.sql.transactions.transaction
 import reactor.core.publisher.Mono
-import java.net.URL
 import java.util.*
 
 class Pinboard(val guild: Guild, initialThreshold: Int, initialChannel: GuildMessageChannel?) {
@@ -54,19 +53,19 @@ class Pinboard(val guild: Guild, initialThreshold: Int, initialChannel: GuildMes
                     val existingPinning = ch.findPinning(existingEntry)
                     existingPinning.onErrorResume {
                         //Pinboard message has gone missing
-                        createNewPinMessage(ch, original, authorId)
+                        createNewPinMessage(ch, original, authorId, pinCount)
                     }
 
                 } else {
                     //Pinboard message has not been created
-                    createNewPinMessage(ch, original, authorId)
+                    createNewPinMessage(ch, original, authorId, pinCount)
                 }
-                message.flatMap { it.bind(original, authorId, pinCount) }.subscribe()
+                message.flatMap { it.update(original, authorId, pinCount) }.subscribe()
             }
         }
     }
 
-    private fun Message.bind(original: Message, authorId: Snowflake, pinCount: Int): Mono<Message> {
+    private fun Message.update(original: Message, authorId: Snowflake, pinCount: Int): Mono<Message> {
         val guildId = this@Pinboard.guild.id
         val link = MessageURL(guildId, original.channelId, original.id)
         val textContent = original.content.truncate(500)
@@ -95,9 +94,9 @@ class Pinboard(val guild: Guild, initialThreshold: Int, initialChannel: GuildMes
         }.firstOrNull()
     }
 
-    private fun createNewPinMessage(ch: GuildMessageChannel, original: Message, authorId: Snowflake): Mono<Message>{
+    private fun createNewPinMessage(ch: GuildMessageChannel, original: Message, authorId: Snowflake, pinCount: Int): Mono<Message>{
         val guildId = this@Pinboard.guild.id
-        return ch.makePinMessage(authorId, MessageURL(guildId, original.channelId, original.id)).doOnSuccess { pinMessage ->
+        return ch.makePinMessage(original, authorId, pinCount).doOnSuccess { pinMessage ->
             transaction {
                 PinboardMessage.new(pinMessage.id.asLong()){
                     this.channel = pinMessage.channelId.asLong()
@@ -117,8 +116,27 @@ class Pinboard(val guild: Guild, initialThreshold: Int, initialChannel: GuildMes
         return getMessageById(Snowflake.of(pinboardMessage.id.value))
     }
 
-    private fun GuildMessageChannel.makePinMessage(authorId: Snowflake, url: MessageURL): Mono<Message> {
-        return createMessage("A post by ${authorId.mention()} was pinned.\n${"Link".markdownLink(url.toString())}")
+    private fun GuildMessageChannel.makePinMessage(original: Message, authorId: Snowflake, pinCount: Int): Mono<Message> {
+            val guildId = this@Pinboard.guild.id
+            val link = MessageURL(guildId, original.channelId, original.id)
+            val textContent = original.content.truncate(500)
+            val author = authorId.mention()
+            val channel = original.channelId.channel()
+            val imageUrl = original.extractImageURL()
+            println("Binding message from $author in $channel")
+            val pin = transaction { PinnwandGuild.findById(this@Pinboard.guild.id.asLong())!!.pinEmoji }
+
+            return createMessage {
+                it.setContent("A post from $author was pinned.")
+                it.setEmbed { embed ->
+                    embed.setDescription("[Link to Post]($link)")
+                    embed.addField("Content", textContent, false)
+                    embed.addField("Author", author, true)
+                    embed.addField("Channel", channel, true)
+                    embed.setFooter("$pin $pinCount pushpins", null)
+                    imageUrl?.let { url -> embed.setImage(url) }
+                }
+            }
     }
 
     fun shouldUnpin(originalId: Snowflake, pinCount: Int) {
