@@ -10,7 +10,7 @@ import java.io.File
 data class DBConfig(val uri: String, val driver: String, val creds: DBCredentials) {
     companion object {
         fun init(file: File): DBConfig {
-            return Yaml.default.decodeFromString<DBConfig>(file.readText())
+            return Yaml.default.decodeFromString(file.readText())
         }
     }
 
