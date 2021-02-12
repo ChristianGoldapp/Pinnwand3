@@ -3,7 +3,6 @@ import db.DiscordMessages
 import db.PinboardMessages
 import db.PinnwandGuilds
 import discord4j.core.DiscordClient
-import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.io.File
