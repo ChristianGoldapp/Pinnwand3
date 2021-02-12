@@ -25,6 +25,8 @@ dependencies {
     implementation("mysql:mysql-connector-java:8.0.21")
     implementation("com.discord4j:discord4j-core:3.1.3")
     implementation("org.slf4j", "slf4j-simple", "2.0.0-alpha1")
+    implementation("com.charleskorn.kaml:kaml:0.27.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.1")
 }
 
 tasks.withType<KotlinCompile>() {

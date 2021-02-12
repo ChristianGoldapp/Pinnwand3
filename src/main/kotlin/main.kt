@@ -1,3 +1,4 @@
+import db.DBConfig
 import db.DiscordMessages
 import db.PinboardMessages
 import db.PinnwandGuilds
@@ -9,8 +10,7 @@ import java.io.File
 import kotlin.system.exitProcess
 
 fun main(args: Array<String>) {
-    //"jdbc:sqlite:test.sqlite"
-    val db = Database.connect(args[1])
+    val db = DBConfig.init(File(args[1])).connect()
     transaction(db) {
         SchemaUtils.create(PinnwandGuilds, DiscordMessages, PinboardMessages)
     }
