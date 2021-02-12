@@ -62,8 +62,9 @@ class Pinboard(val guild: Guild, initialThreshold: Int, initialChannel: GuildMes
                 val message = if (existingEntry != null) {
                     //Pinboard message has been created
                     val existingPinning = ch.findPinning(existingEntry)
+                    val existingID = existingEntry.message.id.value
                     existingPinning.onErrorResume {
-                        log.warn("The Pinboard message referencing ${existingEntry.message.id.value} has gone missing.")
+                        log.warn("The Pinboard message referencing $existingID has gone missing.")
                         log.warn("It will be re-created")
                         //Pinboard message has gone missing
                         createNewPinMessage(ch, original, authorId, pinCount)

@@ -1,6 +1,7 @@
 import command.CommandCallback
 import db.DiscordMessage
 import db.PinboardMessage
+import db.PinboardMessages
 import db.PinnwandGuild
 import discord4j.common.util.Snowflake
 import discord4j.core.GatewayDiscordClient
@@ -10,6 +11,7 @@ import discord4j.core.`object`.entity.channel.GuildMessageChannel
 import discord4j.core.event.domain.Event
 import discord4j.core.event.domain.message.*
 import discord4j.core.spec.MessageCreateSpec
+import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.function.Predicate
 
@@ -158,6 +160,10 @@ class PinnwandGuildConnection(
                         val pinboardPostId = message.pinboardPost.message.asLong()
                         val originalId = message.originalPost.message.asLong()
                         if(PinboardMessage.findById(pinboardPostId) == null){
+                            //Delete duplicates
+                            PinboardMessages.deleteWhere {
+                                PinboardMessages.message eq originalId
+                            }
                             PinboardMessage.new(pinboardPostId) {
                                 this.message = DiscordMessage.findById(originalId) ?: DiscordMessage.new(originalId){
                                     this.pinCount = message.pinCount ?: pinThreshold
