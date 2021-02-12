@@ -22,5 +22,5 @@ class PinboardMessage(id: EntityID<Long>) : LongEntity(id) {
 object PinboardMessages : LongIdTable("pinboard_message") {
     val guild = reference("guild", PinnwandGuilds)
     val channel = long("channel")
-    val message = reference("message", DiscordMessages)
+    val message = reference("message", DiscordMessages).uniqueIndex()
 }
