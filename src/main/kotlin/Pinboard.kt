@@ -39,6 +39,8 @@ class Pinboard(val guild: Guild, initialThreshold: Int, initialChannel: GuildMes
         }
         if (channel != null) {
             updatePinboard(original, discordMessage, authorId, pinCount)
+        } else {
+            println("Can't pin! There is no pinboard channel set!")
         }
     }
 
@@ -59,17 +61,19 @@ class Pinboard(val guild: Guild, initialThreshold: Int, initialChannel: GuildMes
                     //Pinboard message has not been created
                     createNewPinMessage(ch, original, authorId)
                 }
-                message.subscribe { it.bind(original, authorId, pinCount) }
+                message.flatMap { it.bind(original, authorId, pinCount) }.subscribe()
             }
         }
     }
 
     private fun Message.bind(original: Message, authorId: Snowflake, pinCount: Int): Mono<Message> {
-        val link = MessageURL.of(original)
+        val guildId = this@Pinboard.guild.id
+        val link = MessageURL(guildId, original.channelId, original.id)
         val textContent = original.content.truncate(500)
         val author = authorId.mention()
         val channel = original.channelId.channel()
         val imageUrl = original.extractImageURL()
+        println("Binding message from $author in $channel")
         val pin = transaction { PinnwandGuild.findById(this@Pinboard.guild.id.asLong())!!.pinEmoji }
 
         return edit {
@@ -92,14 +96,15 @@ class Pinboard(val guild: Guild, initialThreshold: Int, initialChannel: GuildMes
     }
 
     private fun createNewPinMessage(ch: GuildMessageChannel, original: Message, authorId: Snowflake): Mono<Message>{
-        return ch.makePinMessage(authorId, MessageURL.of(original)).doOnSuccess { pinMessage ->
+        val guildId = this@Pinboard.guild.id
+        return ch.makePinMessage(authorId, MessageURL(guildId, original.channelId, original.id)).doOnSuccess { pinMessage ->
             transaction {
                 PinboardMessage.new(pinMessage.id.asLong()){
                     this.channel = pinMessage.channelId.asLong()
-                    this.guild = PinnwandGuild.findById(this@Pinboard.guild.id.asLong())!!
+                    this.guild = PinnwandGuild.findById(guildId.asLong())!!
                     this.message = DiscordMessage.findById(original.id.asLong())
                         ?: DiscordMessage.new(original.id.asLong()) {
-                            guild = guild
+                            guild = PinnwandGuild.findById(this@Pinboard.guild.id.asLong())!!
                             channel = original.channelId.asLong()
                             author = authorId.asLong()
                         }
