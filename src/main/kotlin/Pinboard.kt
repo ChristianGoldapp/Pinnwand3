@@ -29,7 +29,7 @@ class Pinboard(val guild: Guild, initialThreshold: Int, initialChannel: GuildMes
             //Either find DiscordMessage by ID or create new
             val discordMessage = DiscordMessage.findById(id)
                 ?: DiscordMessage.new(id) {
-                    guild = guild
+                    guild = PinnwandGuild.findById(this@Pinboard.guild.id.asLong())!!
                     channel = original.channelId.asLong()
                     author = authorId.asLong()
                 }
@@ -96,7 +96,7 @@ class Pinboard(val guild: Guild, initialThreshold: Int, initialChannel: GuildMes
             transaction {
                 PinboardMessage.new(pinMessage.id.asLong()){
                     this.channel = pinMessage.channelId.asLong()
-                    this.guild = PinnwandGuild.findById(pinMessage.guildId.k!!.asLong())!!
+                    this.guild = PinnwandGuild.findById(this@Pinboard.guild.id.asLong())!!
                     this.message = DiscordMessage.findById(original.id.asLong())
                         ?: DiscordMessage.new(original.id.asLong()) {
                             guild = guild

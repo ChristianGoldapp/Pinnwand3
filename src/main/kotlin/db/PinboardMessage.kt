@@ -13,7 +13,7 @@ class PinboardMessage(id: EntityID<Long>) : LongEntity(id) {
     var message by DiscordMessage referencedOn PinboardMessages.message
 }
 
-object PinboardMessages : LongIdTable("message") {
+object PinboardMessages : LongIdTable("pinboard_message") {
     val guild = reference("guild", PinnwandGuilds)
     val channel = long("channel")
     val message = reference("message", DiscordMessages)

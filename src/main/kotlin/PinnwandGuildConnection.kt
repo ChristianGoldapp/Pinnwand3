@@ -68,6 +68,9 @@ class PinnwandGuildConnection(
             guild.getChannelById(channel).subscribe {
                 pinboard.channel = it as? GuildMessageChannel
                 println("Set new pinboard channel: ${pinboard.channel?.name}")
+                transaction {
+                    pinnwandGuild.pinboardChannel = pinboard.channel?.id?.asLong()
+                }
             }
         }
 
