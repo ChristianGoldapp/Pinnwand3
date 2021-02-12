@@ -29,31 +29,31 @@ class PinnwandGuildConnection(
     }
 
     var prefix: String = pinnwandGuild.commandPrefix
-    set(value){
-        field = value
-        transaction {
-            pinnwandGuild.commandPrefix = prefix
+        set(value) {
+            field = value
+            transaction {
+                pinnwandGuild.commandPrefix = prefix
+            }
         }
-    }
 
-    val pinboard = Pinboard(pinnwandGuild.pinThreshold, guildChannel)
+    val pinboard = Pinboard(guild, pinnwandGuild.pinThreshold, guildChannel)
 
     var pinEmoji: String = pinnwandGuild.pinEmoji
-    set(value) {
-        field = value
-        transaction {
-            pinnwandGuild.pinEmoji = pinEmoji
+        set(value) {
+            field = value
+            transaction {
+                pinnwandGuild.pinEmoji = pinEmoji
+            }
         }
-    }
 
     var pinThreshold: Int = pinnwandGuild.pinThreshold
-    set(value) {
-        field = value
-        pinboard.threshold = field
-        transaction {
-            pinnwandGuild.pinThreshold = pinThreshold
+        set(value) {
+            field = value
+            pinboard.threshold = field
+            transaction {
+                pinnwandGuild.pinThreshold = pinThreshold
+            }
         }
-    }
 
     val commandCallback = object : CommandCallback {
 
@@ -92,12 +92,13 @@ class PinnwandGuildConnection(
 
     fun addReact(event: ReactionAddEvent) {
         val emoji = event.emoji.normalise()
-        val message = event.messageId
         val reactor = event.userId
-        println("Added React: $emoji by ${reactor.mention()} on ${message.asLong()} ${if(emoji == pinEmoji) "PIN" else ""}")
-        if(emoji == pinEmoji){
-            event.message.subscribe {
-                pinboard.updateBasedOn(it, it.countPins())
+        println("Added React: $emoji by ${reactor.mention()} on ${event.messageId.asLong()} ${if (emoji == pinEmoji) "PIN" else ""}")
+        if (emoji == pinEmoji) {
+            event.message.subscribe { message ->
+                message.author.k?.id?.let {
+                    pinboard.updateBasedOn(message, it, message.countPins())
+                }
             }
         }
     }
@@ -106,10 +107,12 @@ class PinnwandGuildConnection(
         val emoji = event.emoji.normalise()
         val message = event.messageId
         val reactor = event.userId
-        println("Removed React: $emoji by ${reactor.mention()} on ${message.asLong()} ${if(emoji == pinEmoji) "PIN" else ""}")
-        if(emoji == pinEmoji){
-            event.message.subscribe {
-                pinboard.updateBasedOn(it, it.countPins())
+        println("Removed React: $emoji by ${reactor.mention()} on ${message.asLong()} ${if (emoji == pinEmoji) "PIN" else ""}")
+        if (emoji == pinEmoji) {
+            event.message.subscribe { message ->
+                message.author.k?.id?.let {
+                    pinboard.updateBasedOn(message, it, message.countPins())
+                }
             }
         }
     }
@@ -128,7 +131,7 @@ class PinnwandGuildConnection(
         pinboard.shouldUnpin(event.messageId, 0)
     }
 
-    private fun Message.countPins(): Int{
+    private fun Message.countPins(): Int {
         return this.reactions.find { it.emoji.normalise() == pinEmoji }?.count ?: 0
     }
 }
