@@ -92,9 +92,9 @@ class PinnwandGuildConnection(
             println("Setting new pinning threshold for ${guild.name}: $pinThreshold")
         }
 
-        override fun rescan() {
+        override fun rescan(limit: Int) {
             println("Scanning the pinboard's backlog")
-            doRescan()
+            doRescan(limit)
         }
     }
 
@@ -141,12 +141,12 @@ class PinnwandGuildConnection(
         pinboard.shouldUnpin(event.messageId, 0)
     }
 
-    fun doRescan() {
+    fun doRescan(limit: Int) {
         val channel = pinboard.channel ?: return
         val lastMessage = channel.lastMessageId.k ?: return
         channel.getMessagesBefore(lastMessage).filter {
             it.author.k?.id == discord.selfId
-        }.map {
+        }.take(limit.toLong()).map {
             print("Trying to extract from message: ${MessageURL(guild.id, channel.id, it.id)} ...")
             val result = PinboardScan.scan(guild.id, it)
             println("$result")

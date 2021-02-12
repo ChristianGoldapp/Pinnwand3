@@ -17,5 +17,5 @@ interface CommandCallback {
 
     fun setThreshold(newThreshold: Int)
 
-    fun rescan()
+    fun rescan(limit: Int)
 }
