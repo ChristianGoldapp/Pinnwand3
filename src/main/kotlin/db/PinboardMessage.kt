@@ -11,6 +11,12 @@ class PinboardMessage(id: EntityID<Long>) : LongEntity(id) {
     var guild by PinnwandGuild referencedOn PinboardMessages.guild
     var channel by PinboardMessages.channel
     var message by DiscordMessage referencedOn PinboardMessages.message
+
+    override fun toString(): String {
+        return "PinboardMessage(id=$id, guild=$guild, channel=$channel, message=$message)"
+    }
+
+
 }
 
 object PinboardMessages : LongIdTable("pinboard_message") {
