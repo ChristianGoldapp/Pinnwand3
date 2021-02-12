@@ -36,9 +36,9 @@ application {
 }
 
 val fatJar = task("fatJar", type = Jar::class) {
-    this.setProperty("archiveFileName", "BoardDownloader.jar")
+    this.setProperty("archiveFileName", "Pinnwand$archiveVersion.jar")
     manifest {
-        attributes["Implementation-Title"] = "Board Downloader"
+        attributes["Implementation-Title"] = "Pinnwand"
         attributes["Implementation-Version"] = archiveVersion
         attributes["Main-Class"] = "MainKt"
     }
