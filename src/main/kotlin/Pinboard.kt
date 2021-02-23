@@ -81,7 +81,7 @@ class Pinboard(val guild: Guild, initialThreshold: Int, initialChannel: GuildMes
     private fun Message.update(original: Message, authorId: Snowflake, pinCount: Int): Mono<Message> {
         val guildId = this@Pinboard.guild.id
         val link = MessageURL(guildId, original.channelId, original.id)
-        val textContent = original.content.truncate(500)
+        val textContent = original.content.truncate(500).ifEmpty { "..." }
         val author = authorId.mention()
         val channel = original.channelId.channel()
         val imageUrl = original.extractImageURL()
@@ -107,12 +107,17 @@ class Pinboard(val guild: Guild, initialThreshold: Int, initialChannel: GuildMes
         }.firstOrNull()
     }
 
-    private fun createNewPinMessage(ch: GuildMessageChannel, original: Message, authorId: Snowflake, pins: Int): Mono<Message>{
+    private fun createNewPinMessage(
+        ch: GuildMessageChannel,
+        original: Message,
+        authorId: Snowflake,
+        pins: Int
+    ): Mono<Message> {
         val guildId = this@Pinboard.guild.id
         return ch.makePinMessage(original, authorId, pins).doOnSuccess { pinMessage ->
             log.info("Creating a new Pin message based on ${original.id} by ${authorId.asLong()}")
             transaction {
-                val pinMsg = PinboardMessage.new(pinMessage.id.asLong()){
+                val pinMsg = PinboardMessage.new(pinMessage.id.asLong()) {
                     this.channel = pinMessage.channelId.asLong()
                     this.guild = PinnwandGuild.findById(guildId.asLong())!!
                     this.message = DiscordMessage.findById(original.id.asLong())
@@ -132,38 +137,42 @@ class Pinboard(val guild: Guild, initialThreshold: Int, initialChannel: GuildMes
         return getMessageById(Snowflake.of(pinboardMessage.id.value))
     }
 
-    private fun GuildMessageChannel.makePinMessage(original: Message, authorId: Snowflake, pinCount: Int): Mono<Message> {
-            val guildId = this@Pinboard.guild.id
-            val link = MessageURL(guildId, original.channelId, original.id)
-            val textContent = original.content.truncate(500)
-            val author = authorId.mention()
-            val channel = original.channelId.channel()
-            val imageUrl = original.extractImageURL()
-            log.info("Binding message from $author in $channel")
-            val pin = transaction { PinnwandGuild.findById(this@Pinboard.guild.id.asLong())!!.pinEmoji }
+    private fun GuildMessageChannel.makePinMessage(
+        original: Message,
+        authorId: Snowflake,
+        pinCount: Int
+    ): Mono<Message> {
+        val guildId = this@Pinboard.guild.id
+        val link = MessageURL(guildId, original.channelId, original.id)
+        val textContent = original.content.truncate(500).ifEmpty { "..." }
+        val author = authorId.mention()
+        val channel = original.channelId.channel()
+        val imageUrl = original.extractImageURL()
+        log.info("Binding message from $author in $channel")
+        val pin = transaction { PinnwandGuild.findById(this@Pinboard.guild.id.asLong())!!.pinEmoji }
 
-            return createMessage {
-                it.setContent("A post from $author was pinned.")
-                it.setEmbed { embed ->
-                    embed.setDescription("[Link to Post]($link)")
-                    embed.addField("Content", textContent, false)
-                    embed.addField("Author", author, true)
-                    embed.addField("Channel", channel, true)
-                    embed.setFooter("$pin $pinCount pushpins", null)
-                    imageUrl?.let { url -> embed.setImage(url) }
-                }
+        return createMessage {
+            it.setContent("A post from $author was pinned.")
+            it.setEmbed { embed ->
+                embed.setDescription("[Link to Post]($link)")
+                embed.addField("Content", textContent, false)
+                embed.addField("Author", author, true)
+                embed.addField("Channel", channel, true)
+                embed.setFooter("$pin $pinCount pushpins", null)
+                imageUrl?.let { url -> embed.setImage(url) }
             }
+        }
     }
 
     fun shouldUnpin(originalId: Snowflake, pinCount: Int) {
         log.info("Should unpin ($pinCount pins): $originalId")
         transaction {
             val entry = DiscordMessage.findById(originalId.asLong())
-            if(entry != null){
+            if (entry != null) {
                 val pinEntry = PinboardMessage.find {
                     PinboardMessages.message eq entry.id
                 }.firstOrNull()
-                if(pinEntry != null){
+                if (pinEntry != null) {
                     guild.getChannelById(Snowflake.of(pinEntry.channel)).flatMap {
                         (it as? GuildMessageChannel)?.let {
                             it.getMessageById(Snowflake.of(pinEntry.id.value))
