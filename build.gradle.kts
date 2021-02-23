@@ -49,12 +49,6 @@ val fatJar = task("fatJar", type = Jar::class) {
     with(tasks.jar.get() as CopySpec)
 }
 
-tasks {
-    "build" {
-        dependsOn(fatJar)
-    }
-}
-
 publishing {
     publications {
         create<MavenPublication>("default") {
