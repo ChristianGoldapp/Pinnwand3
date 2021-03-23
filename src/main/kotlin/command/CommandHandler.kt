@@ -1,8 +1,11 @@
 import command.Command
 import command.CommandCallback
 import discord4j.core.`object`.entity.Message
+import org.slf4j.LoggerFactory
 
 class CommandHandler(val callback: CommandCallback) {
+    val log = LoggerFactory.getLogger(this.javaClass)
+
     fun parseCommand(message: Message): Command? {
         try {
             val prefix = callback.getPrefix()
@@ -37,7 +40,7 @@ class CommandHandler(val callback: CommandCallback) {
 
     fun onMessage(message: Message) {
         val command = parseCommand(message) ?: return
-        println("Executing: $command")
+        log.info("Executing: $command")
         command.execute()
     }
 }

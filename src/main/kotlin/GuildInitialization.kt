@@ -6,12 +6,14 @@ import discord4j.core.`object`.entity.channel.GuildMessageChannel
 import discord4j.core.event.domain.lifecycle.ConnectEvent
 import discord4j.rest.util.Permission
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.slf4j.LoggerFactory
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.time.LocalDateTime
 
 fun GuildInitialization(discord: GatewayDiscordClient): Flux<PinnwandGuildConnection> {
 
+    val log = LoggerFactory.getLogger(PinnwandGuildConnection::class.java)
     val selfId = discord.selfId
 
     fun validatePinboardChannel(
@@ -21,7 +23,7 @@ fun GuildInitialization(discord: GatewayDiscordClient): Flux<PinnwandGuildConnec
     ) {
         if (pinboardChannelId != null) {
             fun onInvalid() {
-                println("Channel $pinboardChannelId is not a valid channel. Either we cannot send messages in it or it does not exist.")
+                log.error("Channel $pinboardChannelId is not a valid channel. Either we cannot send messages in it or it does not exist.")
                 pinnwandGuild.pinboardChannel = null
                 pinnwandGuild.flush()
             }
@@ -44,7 +46,7 @@ fun GuildInitialization(discord: GatewayDiscordClient): Flux<PinnwandGuildConnec
                 PinnwandGuild.findById(guild.id.asLong()) ?: PinnwandGuild.new(guild.id.asLong()) {
                     firstJoined = LocalDateTime.now()
                 }
-            println("Settings for Guild: $pinnwandGuild")
+            log.info("Settings for Guild: $pinnwandGuild")
 
             //Ensure that the pinboard channel exists if it is set and that we have the rights to use it
             val pinboardChannelId = pinnwandGuild.pinboardChannel?.let { Snowflake.of(it) }
@@ -54,7 +56,7 @@ fun GuildInitialization(discord: GatewayDiscordClient): Flux<PinnwandGuildConnec
     }
 
     fun init(guild: Guild): Mono<PinnwandGuildConnection> {
-        println("Connected to Guild ${guild.name}")
+        log.info("Connected to Guild ${guild.name}")
 
         //Register guild in database if it does not exist
         val pinnwandGuild = registerGuild(guild)
