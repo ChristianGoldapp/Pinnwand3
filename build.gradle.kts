@@ -35,7 +35,7 @@ tasks.withType<KotlinCompile>() {
 }
 
 application {
-    mainClassName = "MainKt"
+    mainClass.set("Main")
 }
 
 val fatJar = task("fatJar", type = Jar::class) {
@@ -43,7 +43,7 @@ val fatJar = task("fatJar", type = Jar::class) {
     manifest {
         attributes["Implementation-Title"] = "Pinnwand"
         attributes["Implementation-Version"] = version
-        attributes["Main-Class"] = "MainKt"
+        attributes["Main-Class"] = "Main"
     }
     from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
     with(tasks.jar.get() as CopySpec)

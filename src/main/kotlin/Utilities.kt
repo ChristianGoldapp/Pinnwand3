@@ -2,6 +2,7 @@ import db.LeaderboardEntry
 import discord4j.common.util.Snowflake
 import discord4j.core.`object`.entity.Message
 import discord4j.core.`object`.reaction.ReactionEmoji
+import org.slf4j.LoggerFactory
 import java.net.URL
 import java.util.*
 
@@ -42,11 +43,12 @@ fun String.truncate(maxSize: Int, ending: Char = Typography.ellipsis): String {
 }
 
 fun Message.extractImageURL(): String? {
+    val log = LoggerFactory.getLogger(this.javaClass)
     val raw = attachments.toList().getOrNull(0)?.url ?: embeds.getOrNull(0)?.url?.k ?: return null
     return try {
         URL(raw).toString()
     } catch (ex: Exception) {
-        println("Could not parse $raw as URL")
+        log.error("Could not parse $raw as URL")
         null
     }
 }

@@ -64,7 +64,7 @@ class PinnwandGuildConnection(
 
         override fun setPrefix(newPrefix: String) {
             prefix = newPrefix
-            println("Setting new command prefix for ${guild.name}: $prefix")
+            log.info("Setting new command prefix for ${guild.name}: $prefix")
         }
 
         override fun getPrefix(): String = prefix
@@ -72,7 +72,7 @@ class PinnwandGuildConnection(
         override fun setPinboard(channel: Snowflake) {
             guild.getChannelById(channel).subscribe {
                 pinboard.channel = it as? GuildMessageChannel
-                println("Set new pinboard channel: ${pinboard.channel?.name}")
+                log.info("Set new pinboard channel: ${pinboard.channel?.name}")
                 transaction {
                     pinnwandGuild.pinboardChannel = pinboard.channel?.id?.asLong()
                 }
@@ -87,16 +87,16 @@ class PinnwandGuildConnection(
 
         override fun setPinEmoji(newEmoji: String) {
             pinEmoji = newEmoji
-            println("Setting new pinning emoji for ${guild.name}: $pinEmoji")
+            log.info("Setting new pinning emoji for ${guild.name}: $pinEmoji")
         }
 
         override fun setThreshold(newThreshold: Int) {
             pinThreshold = newThreshold
-            println("Setting new pinning threshold for ${guild.name}: $pinThreshold")
+            log.info("Setting new pinning threshold for ${guild.name}: $pinThreshold")
         }
 
         override fun rescan(limit: Int) {
-            println("Scanning the pinboard's backlog")
+            log.info("Scanning the pinboard's backlog")
             doRescan(limit)
         }
 
@@ -122,7 +122,7 @@ class PinnwandGuildConnection(
     fun addReact(event: ReactionAddEvent) {
         val emoji = event.emoji.normalise()
         val reactor = event.userId
-        println("Added React: $emoji by ${reactor.mention()} on ${event.messageId.asLong()} ${if (emoji == pinEmoji) "PIN" else ""}")
+        log.info("Added React: $emoji by ${reactor.mention()} on ${event.messageId.asLong()} ${if (emoji == pinEmoji) "PIN" else ""}")
         if (emoji == pinEmoji) {
             event.message.subscribe { message ->
                 message.author.k?.id?.let {
@@ -136,7 +136,7 @@ class PinnwandGuildConnection(
         val emoji = event.emoji.normalise()
         val message = event.messageId
         val reactor = event.userId
-        println("Removed React: $emoji by ${reactor.mention()} on ${message.asLong()} ${if (emoji == pinEmoji) "PIN" else ""}")
+        log.info("Removed React: $emoji by ${reactor.mention()} on ${message.asLong()} ${if (emoji == pinEmoji) "PIN" else ""}")
         if (emoji == pinEmoji) {
             event.message.subscribe { message ->
                 message.author.k?.id?.let {
@@ -149,8 +149,8 @@ class PinnwandGuildConnection(
     fun createMessage(event: MessageCreateEvent) {
         val message = event.message.content
         val author = event.member.k?.displayName ?: "<Unknown User>"
-        println("Created message: by $author")
-        println("\t$message")
+        log.info("Created message: by $author")
+        log.info("\t$message")
         commandHandler.onMessage(event.message)
     }
 
@@ -168,10 +168,10 @@ class PinnwandGuildConnection(
         }.take(limit.toLong()).map {
             print("Trying to extract from message: ${MessageURL(guild.id, channel.id, it.id)} ...")
             val result = PinboardScan.scan(guild.id, it)
-            println("$result")
+            log.info("$result")
             result
         }.filter { it is PinboardScan.Success }.map { it as PinboardScan.Success }.collectList().subscribe { messages ->
-            println("Found ${messages.size} messages")
+            log.info("Found ${messages.size} messages")
             for (message in messages) {
                 transaction {
                     val pinboardPostId = message.pinboardPost.message.asLong()
