@@ -6,6 +6,7 @@ import discord4j.common.util.Snowflake
 import discord4j.core.`object`.entity.Guild
 import discord4j.core.`object`.entity.Message
 import discord4j.core.`object`.entity.channel.GuildMessageChannel
+import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.Mono
@@ -115,13 +116,19 @@ class Pinboard(val guild: Guild, initialThreshold: Int, initialChannel: GuildMes
     ): Mono<Message> {
         val guildId = this@Pinboard.guild.id
         return ch.makePinMessage(original, authorId, pins).doOnSuccess { pinMessage ->
-            log.info("Creating a new Pin message based on ${original.id} by ${authorId.asLong()}")
+            val originalID = original.id.asLong()
+            log.info("Creating a new Pin message based on $originalID by ${authorId.asLong()}")
             transaction {
+                //Delete old messages before creating a new one
+                val deletedOldMessages = PinboardMessages.deleteWhere { PinboardMessages.message eq originalID }
+                if(deletedOldMessages > 0){
+                    log.warn("Database contained $deletedOldMessages stale references to message $originalID. They have been removed.")
+                }
                 val pinMsg = PinboardMessage.new(pinMessage.id.asLong()) {
                     this.channel = pinMessage.channelId.asLong()
                     this.guild = PinnwandGuild.findById(guildId.asLong())!!
-                    this.message = DiscordMessage.findById(original.id.asLong())
-                        ?: DiscordMessage.new(original.id.asLong()) {
+                    this.message = DiscordMessage.findById(originalID)
+                        ?: DiscordMessage.new(originalID) {
                             guild = PinnwandGuild.findById(this@Pinboard.guild.id.asLong())!!
                             channel = original.channelId.asLong()
                             author = authorId.asLong()
