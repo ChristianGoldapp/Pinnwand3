@@ -8,39 +8,35 @@ import discord4j.core.`object`.entity.Message
 import discord4j.core.`object`.entity.channel.GuildMessageChannel
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.slf4j.LoggerFactory
 import reactor.core.publisher.Mono
 import java.util.*
-import java.util.logging.Logger
 
 class Pinboard(val guild: Guild, initialThreshold: Int, initialChannel: GuildMessageChannel?) {
 
     var channel: GuildMessageChannel? = initialChannel
     var threshold: Int = initialThreshold
 
-    val log = LoggerFactory.getLogger(Pinboard::class.java)
-
     fun updateBasedOn(original: Message, authorId: Snowflake, pinCount: Int) {
-        log.trace("Updating based on message by ${authorId.mention()} with $pinCount pins")
-        log.trace(original.toString())
+        LOG.trace("Updating based on message by ${authorId.mention()} with $pinCount pins")
+        LOG.trace(original.toString())
         if (pinCount >= threshold) {
             shouldPin(original, authorId, pinCount)
         } else shouldUnpin(original.id, pinCount)
     }
 
     fun shouldPin(original: Message, authorId: Snowflake, pinCount: Int) {
-        log.info("Should pin message ($pinCount pins) by ${authorId.mention()}")
-        log.info(original.toString())
+        LOG.info("Should pin message ($pinCount pins) by ${authorId.mention()}")
+        LOG.info(original.toString())
         val discordMessage = transaction {
             val id = original.id.asLong()
             //Either find DiscordMessage by ID or create new
             val discordMessage = DiscordMessage.findById(id)
                 ?: DiscordMessage.new(id) {
-                    log.info("Entering a new DiscordMessage into the DB")
+                    LOG.info("Entering a new DiscordMessage into the DB")
                     guild = PinnwandGuild.findById(this@Pinboard.guild.id.asLong())!!
                     channel = original.channelId.asLong()
                     author = authorId.asLong()
-                    log.info(this.toString())
+                    LOG.info(this.toString())
                 }
             //Update the pin count
             discordMessage.pinCount = pinCount
@@ -49,14 +45,14 @@ class Pinboard(val guild: Guild, initialThreshold: Int, initialChannel: GuildMes
         if (channel != null) {
             updatePinboard(original, discordMessage, authorId, pinCount)
         } else {
-            log.warn("Can't pin! There is no pinboard channel set!")
+            LOG.warn("Can't pin! There is no pinboard channel set!")
         }
     }
 
     fun updatePinboard(original: Message, dbEntry: DiscordMessage, authorId: Snowflake, pinCount: Int) {
         channel?.let { ch ->
-            log.info("Updating the pinboard to reflect the message ${original.id} by $authorId with $pinCount pins")
-            log.info("$dbEntry")
+            LOG.info("Updating the pinboard to reflect the message ${original.id} by $authorId with $pinCount pins")
+            LOG.info("$dbEntry")
             transaction {
                 val existingEntry = findExistingPinMessageInDB(dbEntry)
                 //Three possible cases:
@@ -65,8 +61,8 @@ class Pinboard(val guild: Guild, initialThreshold: Int, initialChannel: GuildMes
                     val existingPinning = ch.findPinning(existingEntry)
                     val existingID = existingEntry.message.id.value
                     existingPinning.onErrorResume {
-                        log.warn("The Pinboard message referencing $existingID has gone missing.")
-                        log.warn("It will be re-created")
+                        LOG.warn("The Pinboard message referencing $existingID has gone missing.")
+                        LOG.warn("It will be re-created")
                         //Pinboard message has gone missing
                         createNewPinMessage(ch, original, authorId, pinCount)
                     }
@@ -86,7 +82,7 @@ class Pinboard(val guild: Guild, initialThreshold: Int, initialChannel: GuildMes
         val author = authorId.mention()
         val channel = original.channelId.channel()
         val imageUrl = original.extractImageURL()
-        log.info("Binding message from $author in $channel")
+        LOG.info("Binding message from $author in $channel")
         val pin = transaction { PinnwandGuild.findById(this@Pinboard.guild.id.asLong())!!.pinEmoji }
 
         return edit {
@@ -117,12 +113,12 @@ class Pinboard(val guild: Guild, initialThreshold: Int, initialChannel: GuildMes
         val guildId = this@Pinboard.guild.id
         return ch.makePinMessage(original, authorId, pins).doOnSuccess { pinMessage ->
             val originalID = original.id.asLong()
-            log.info("Creating a new Pin message based on $originalID by ${authorId.asLong()}")
+            LOG.info("Creating a new Pin message based on $originalID by ${authorId.asLong()}")
             transaction {
                 //Delete old messages before creating a new one
                 val deletedOldMessages = PinboardMessages.deleteWhere { PinboardMessages.message eq originalID }
-                if(deletedOldMessages > 0){
-                    log.warn("Database contained $deletedOldMessages stale references to message $originalID. They have been removed.")
+                if (deletedOldMessages > 0) {
+                    LOG.warn("Database contained $deletedOldMessages stale references to message $originalID. They have been removed.")
                 }
                 val pinMsg = PinboardMessage.new(pinMessage.id.asLong()) {
                     this.channel = pinMessage.channelId.asLong()
@@ -135,7 +131,7 @@ class Pinboard(val guild: Guild, initialThreshold: Int, initialChannel: GuildMes
                             this.pinCount = pins
                         }
                 }
-                log.info(pinMsg.toString())
+                LOG.info(pinMsg.toString())
             }
         }
     }
@@ -155,7 +151,7 @@ class Pinboard(val guild: Guild, initialThreshold: Int, initialChannel: GuildMes
         val author = authorId.mention()
         val channel = original.channelId.channel()
         val imageUrl = original.extractImageURL()
-        log.info("Binding message from $author in $channel")
+        LOG.info("Binding message from $author in $channel")
         val pin = transaction { PinnwandGuild.findById(this@Pinboard.guild.id.asLong())!!.pinEmoji }
 
         return createMessage {
@@ -172,7 +168,7 @@ class Pinboard(val guild: Guild, initialThreshold: Int, initialChannel: GuildMes
     }
 
     fun shouldUnpin(originalId: Snowflake, pinCount: Int) {
-        log.info("Should unpin ($pinCount pins): $originalId")
+        LOG.info("Should unpin ($pinCount pins): $originalId")
         transaction {
             val entry = DiscordMessage.findById(originalId.asLong())
             if (entry != null) {
@@ -187,8 +183,8 @@ class Pinboard(val guild: Guild, initialThreshold: Int, initialChannel: GuildMes
                     }.flatMap {
                         it.delete()
                     }.doOnError {
-                        log.error("An error occured while deleting message $originalId")
-                        log.error(it.toString())
+                        LOG.error("An error occured while deleting message $originalId")
+                        LOG.error(it.toString())
                     }.subscribe {
                         pinEntry.delete()
                     }

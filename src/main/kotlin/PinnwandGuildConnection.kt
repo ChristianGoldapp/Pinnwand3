@@ -10,7 +10,6 @@ import discord4j.core.event.domain.message.*
 import discord4j.core.spec.MessageCreateSpec
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.slf4j.LoggerFactory
 import java.util.function.Predicate
 import kotlin.math.min
 
@@ -30,8 +29,6 @@ class PinnwandGuildConnection(
         subscribe(MessageCreateEvent::class.java, { it.guildId.k == guild.id }, ::createMessage)
         subscribe(MessageDeleteEvent::class.java, { true }, ::removeMessage)
     }
-
-    val log = LoggerFactory.getLogger(PinnwandGuildConnection::class.java)
 
     var prefix: String = pinnwandGuild.commandPrefix
         set(value) {
@@ -64,7 +61,7 @@ class PinnwandGuildConnection(
 
         override fun setPrefix(newPrefix: String) {
             prefix = newPrefix
-            log.info("Setting new command prefix for ${guild.name}: $prefix")
+            LOG.info("Setting new command prefix for ${guild.name}: $prefix")
         }
 
         override fun getPrefix(): String = prefix
@@ -72,7 +69,7 @@ class PinnwandGuildConnection(
         override fun setPinboard(channel: Snowflake) {
             guild.getChannelById(channel).subscribe {
                 pinboard.channel = it as? GuildMessageChannel
-                log.info("Set new pinboard channel: ${pinboard.channel?.name}")
+                LOG.info("Set new pinboard channel: ${pinboard.channel?.name}")
                 transaction {
                     pinnwandGuild.pinboardChannel = pinboard.channel?.id?.asLong()
                 }
@@ -87,16 +84,16 @@ class PinnwandGuildConnection(
 
         override fun setPinEmoji(newEmoji: String) {
             pinEmoji = newEmoji
-            log.info("Setting new pinning emoji for ${guild.name}: $pinEmoji")
+            LOG.info("Setting new pinning emoji for ${guild.name}: $pinEmoji")
         }
 
         override fun setThreshold(newThreshold: Int) {
             pinThreshold = newThreshold
-            log.info("Setting new pinning threshold for ${guild.name}: $pinThreshold")
+            LOG.info("Setting new pinning threshold for ${guild.name}: $pinThreshold")
         }
 
         override fun rescan(limit: Int) {
-            log.info("Scanning the pinboard's backlog")
+            LOG.info("Scanning the pinboard's backlog")
             doRescan(limit)
         }
 
@@ -105,7 +102,7 @@ class PinnwandGuildConnection(
                 (channel as? GuildMessageChannel)?.let {
                     val leaderboard = Leaderboard.tally(guild.id)
                     val content = formatLeaderboard(leaderboard, 20, (page - 1) * 20)
-                    log.info("Leaderboard: \n$content")
+                    LOG.info("Leaderboard: \n$content")
                     channel.createMessage { mcs ->
                         mcs.setEmbed {
                             it.setDescription("Pinnwand Leaderboard")
@@ -122,7 +119,7 @@ class PinnwandGuildConnection(
     fun addReact(event: ReactionAddEvent) {
         val emoji = event.emoji.normalise()
         val reactor = event.userId
-        log.info("Added React: $emoji by ${reactor.mention()} on ${event.messageId.asLong()} ${if (emoji == pinEmoji) "PIN" else ""}")
+        LOG.info("Added React: $emoji by ${reactor.mention()} on ${event.messageId.asLong()} ${if (emoji == pinEmoji) "PIN" else ""}")
         if (emoji == pinEmoji) {
             event.message.subscribe { message ->
                 message.author.k?.id?.let {
@@ -136,7 +133,7 @@ class PinnwandGuildConnection(
         val emoji = event.emoji.normalise()
         val message = event.messageId
         val reactor = event.userId
-        log.info("Removed React: $emoji by ${reactor.mention()} on ${message.asLong()} ${if (emoji == pinEmoji) "PIN" else ""}")
+        LOG.info("Removed React: $emoji by ${reactor.mention()} on ${message.asLong()} ${if (emoji == pinEmoji) "PIN" else ""}")
         if (emoji == pinEmoji) {
             event.message.subscribe { message ->
                 message.author.k?.id?.let {
@@ -149,8 +146,8 @@ class PinnwandGuildConnection(
     fun createMessage(event: MessageCreateEvent) {
         val message = event.message.content
         val author = event.member.k?.displayName ?: "<Unknown User>"
-        log.info("Created message: by $author")
-        log.info("\t$message")
+        LOG.info("Created message: by $author")
+        LOG.info("\t$message")
         commandHandler.onMessage(event.message)
     }
 
@@ -168,10 +165,10 @@ class PinnwandGuildConnection(
         }.take(limit.toLong()).map {
             print("Trying to extract from message: ${MessageURL(guild.id, channel.id, it.id)} ...")
             val result = PinboardScan.scan(guild.id, it)
-            log.info("$result")
+            LOG.info("$result")
             result
         }.filter { it is PinboardScan.Success }.map { it as PinboardScan.Success }.collectList().subscribe { messages ->
-            log.info("Found ${messages.size} messages")
+            LOG.info("Found ${messages.size} messages")
             for (message in messages) {
                 transaction {
                     val pinboardPostId = message.pinboardPost.message.asLong()

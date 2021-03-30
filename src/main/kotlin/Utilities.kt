@@ -43,12 +43,11 @@ fun String.truncate(maxSize: Int, ending: Char = Typography.ellipsis): String {
 }
 
 fun Message.extractImageURL(): String? {
-    val log = LoggerFactory.getLogger(this.javaClass)
     val raw = attachments.toList().getOrNull(0)?.url ?: embeds.getOrNull(0)?.url?.k ?: return null
     return try {
         URL(raw).toString()
     } catch (ex: Exception) {
-        log.error("Could not parse $raw as URL")
+        LOG.error("Could not parse $raw as URL")
         null
     }
 }

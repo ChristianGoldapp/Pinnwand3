@@ -12,8 +12,6 @@ import kotlin.system.exitProcess
 
 object Main {
 
-    val log = LoggerFactory.getLogger(this.javaClass)
-
     @JvmStatic
     fun main(args: Array<String>) {
         val db = DBConfig.init(File(args[1])).connect()
@@ -22,7 +20,7 @@ object Main {
         }
         val token = File(args[0]).readText()
         val client = DiscordClient.create(token).login().doOnError {
-            log.error("Could not connect Discord client")
+            LOG.error("Could not connect Discord client")
             exitProcess(-1)
         }.block()!!
         val guildInit = GuildInitialization(client)
@@ -32,3 +30,5 @@ object Main {
         client.onDisconnect().block()
     }
 }
+
+val LOG = LoggerFactory.getLogger("eu.goldapp.Pinnwand")
