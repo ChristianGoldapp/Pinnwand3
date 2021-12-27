@@ -93,7 +93,7 @@ class PinnwandGuildConnection(
         }
 
         override fun rescan(limit: Int) {
-            LOG.info("Scanning the pinboard's backlog")
+            LOG.trace("Scanning the pinboard's backlog")
             doRescan(limit)
         }
 
@@ -102,7 +102,7 @@ class PinnwandGuildConnection(
                 (channel as? GuildMessageChannel)?.let {
                     val leaderboard = Leaderboard.tally(guild.id)
                     val content = formatLeaderboard(leaderboard, 20, (page - 1) * 20)
-                    LOG.info("Leaderboard: \n$content")
+                    LOG.trace("Leaderboard: \n$content")
                     channel.createMessage { mcs ->
                         mcs.setEmbed {
                             it.setDescription("Pinnwand Leaderboard")
@@ -119,7 +119,7 @@ class PinnwandGuildConnection(
     fun addReact(event: ReactionAddEvent) {
         val emoji = event.emoji.normalise()
         val reactor = event.userId
-        LOG.info("Added React: $emoji by ${reactor.mention()} on ${event.messageId.asLong()} ${if (emoji == pinEmoji) "PIN" else ""}")
+        LOG.trace("Added React: $emoji by ${reactor.mention()} on ${event.messageId.asLong()} ${if (emoji == pinEmoji) "PIN" else ""}")
         if (emoji == pinEmoji) {
             event.message.subscribe { message ->
                 message.author.k?.id?.let {
@@ -133,7 +133,7 @@ class PinnwandGuildConnection(
         val emoji = event.emoji.normalise()
         val message = event.messageId
         val reactor = event.userId
-        LOG.info("Removed React: $emoji by ${reactor.mention()} on ${message.asLong()} ${if (emoji == pinEmoji) "PIN" else ""}")
+        LOG.trace("Removed React: $emoji by ${reactor.mention()} on ${message.asLong()} ${if (emoji == pinEmoji) "PIN" else ""}")
         if (emoji == pinEmoji) {
             event.message.subscribe { message ->
                 message.author.k?.id?.let {
@@ -146,8 +146,8 @@ class PinnwandGuildConnection(
     fun createMessage(event: MessageCreateEvent) {
         val message = event.message.content
         val author = event.member.k?.displayName ?: "<Unknown User>"
-        LOG.info("Created message: by $author")
-        LOG.info("\t$message")
+        LOG.trace("Created message: by $author")
+        LOG.trace("\t$message")
         commandHandler.onMessage(event.message)
     }
 
@@ -165,10 +165,10 @@ class PinnwandGuildConnection(
         }.take(limit.toLong()).map {
             print("Trying to extract from message: ${MessageURL(guild.id, channel.id, it.id)} ...")
             val result = PinboardScan.scan(guild.id, it)
-            LOG.info("$result")
+            LOG.trace("$result")
             result
         }.filter { it is PinboardScan.Success }.map { it as PinboardScan.Success }.collectList().subscribe { messages ->
-            LOG.info("Found ${messages.size} messages")
+            LOG.trace("Found ${messages.size} messages")
             for (message in messages) {
                 transaction {
                     val pinboardPostId = message.pinboardPost.message.asLong()

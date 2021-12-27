@@ -38,7 +38,7 @@ class CommandHandler(val callback: CommandCallback) {
 
     fun onMessage(message: Message) {
         val command = parseCommand(message) ?: return
-        LOG.info("Executing: $command")
+        LOG.trace("Executing: $command")
         command.execute()
     }
 }
