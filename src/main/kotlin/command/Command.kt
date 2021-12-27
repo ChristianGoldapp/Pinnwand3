@@ -15,7 +15,7 @@ sealed class Command(val channel: Snowflake, val user: Snowflake, val callback: 
         return "Command(channel=$channel, user=$user)"
     }
 
-    abstract fun execute();
+    abstract fun execute()
 
     class SetPrefix(channel: Snowflake, user: Snowflake, val prefix: String, callback: CommandCallback) : Command(channel, user, callback) {
         companion object {
@@ -34,7 +34,7 @@ sealed class Command(val channel: Snowflake, val user: Snowflake, val callback: 
         override fun execute() {
             callback.setPrefix(prefix)
             callback.sendMessage(channel){
-                setContent("Alright ${user.mention()}, making \"$prefix\" the new command prefix for this server. Note that prefixes may be followed by a space.")
+                withContent("Alright ${user.mention()}, making \"$prefix\" the new command prefix for this server. Note that prefixes may be followed by a space.")
             }
         }
 
@@ -54,7 +54,7 @@ sealed class Command(val channel: Snowflake, val user: Snowflake, val callback: 
         override fun execute() {
             callback.setPinboard(channel)
             callback.sendMessage(channel){
-                setContent("Alright ${user.mention()}, making this channel the pinboard for this server.")
+                withContent("Alright ${user.mention()}, making this channel the pinboard for this server.")
             }
         }
 
@@ -73,7 +73,7 @@ sealed class Command(val channel: Snowflake, val user: Snowflake, val callback: 
         override fun execute() {
             callback.setPinEmoji(emoji)
             callback.sendMessage(channel){
-                setContent("Alright ${user.mention()}, setting the pin emoji for this server to $emoji.")
+                withContent("Alright ${user.mention()}, setting the pin emoji for this server to $emoji.")
             }
         }
 
@@ -96,7 +96,7 @@ sealed class Command(val channel: Snowflake, val user: Snowflake, val callback: 
         override fun execute() {
             callback.setThreshold(threshold)
             callback.sendMessage(channel){
-                setContent("Alright ${user.mention()}, setting the threshold for this server to $threshold.")
+                withContent("Alright ${user.mention()}, setting the threshold for this server to $threshold.")
             }
         }
 
@@ -153,7 +153,7 @@ sealed class Command(val channel: Snowflake, val user: Snowflake, val callback: 
 
         override fun execute() {
             callback.sendMessage(channel){
-                this.setContent("${user.mention()} Pong!")
+                withContent("${user.mention()} Pong!")
             }
         }
 

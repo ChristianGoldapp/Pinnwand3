@@ -7,6 +7,8 @@ import discord4j.core.`object`.entity.Message
 import discord4j.core.`object`.entity.channel.GuildMessageChannel
 import discord4j.core.event.domain.Event
 import discord4j.core.event.domain.message.*
+import discord4j.core.spec.EmbedCreateFields
+import discord4j.core.spec.EmbedCreateSpec
 import discord4j.core.spec.MessageCreateSpec
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -76,9 +78,10 @@ class PinnwandGuildConnection(
             }
         }
 
-        override fun sendMessage(channel: Snowflake, spec: MessageCreateSpec.() -> Unit) {
+        override fun sendMessage(channel: Snowflake, spec: MessageCreateSpec.() -> MessageCreateSpec) {
             guild.getChannelById(channel).subscribe {
-                (it as? GuildMessageChannel ?: return@subscribe).createMessage(spec).subscribe()
+                (it as? GuildMessageChannel ?: return@subscribe).createMessage(MessageCreateSpec.create().spec())
+                    .subscribe()
             }
         }
 
@@ -103,12 +106,13 @@ class PinnwandGuildConnection(
                     val leaderboard = Leaderboard.tally(guild.id)
                     val content = formatLeaderboard(leaderboard, 20, (page - 1) * 20)
                     LOG.trace("Leaderboard: \n$content")
-                    channel.createMessage { mcs ->
-                        mcs.setEmbed {
-                            it.setDescription("Pinnwand Leaderboard")
-                            it.addField("#", content.substring(0, min(content.length, 1000)), true)
-                        }
-                    }.subscribe()
+                    channel.createMessage(
+                        MessageCreateSpec.create().withEmbeds(
+                            EmbedCreateSpec.create().withDescription("Pinnwand Leaderboard").withFields(
+                                EmbedCreateFields.Field.of("#", content.substring(0, min(content.length, 1000)), true)
+                            )
+                        )
+                    ).subscribe()
                 }
             }
         }

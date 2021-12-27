@@ -4,7 +4,7 @@ import org.jetbrains.exposed.dao.LongEntity
 import org.jetbrains.exposed.dao.LongEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.LongIdTable
-import org.jetbrains.exposed.sql.`java-time`.datetime
+import org.jetbrains.exposed.sql.javatime.datetime
 
 class PinnwandGuild(id: EntityID<Long>) : LongEntity(id) {
     companion object : LongEntityClass<PinnwandGuild>(PinnwandGuilds)
