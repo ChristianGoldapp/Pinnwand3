@@ -1,0 +1,1 @@
+# A Discord bot to allow users to pin messages on a "Pinboard"
